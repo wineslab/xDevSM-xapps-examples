@@ -1,4 +1,4 @@
-# xapps-repo
+# xDevSM-xapps-examples
 
 Repository gathering xApps that utilize the xDevSM framework
 
@@ -11,6 +11,6 @@ docker build --tag kpm-basic-xapp:0.1.0 --file docker/Dockerfile.kpm_basic_xapp 
 
 
 # Organizations
-| <img src="https://github.com/wineslab.png?s=100" width="60" height="60"> | [**Wireless Networks and Embedded Systems Lab**](https://github.com/wineslab) |
-| :--: | :--: |
-| <img src="https://github.com/MMw-Unibo.png?s=100" width="60" height="60"> | [**Mobile Middleware Research Group**](https://github.com/MMw-Unibo) |
+| <img src="https://github.com/wineslab.png?s=100" width="60" height="60"> | [**Wireless Networks and Embedded Systems Lab**](https://github.com/wineslab) | [website](https://ece.northeastern.edu/wineslab/index.php) |
+| :--: | :--: | :--|
+| <img src="https://github.com/MMw-Unibo.png?s=100" width="60" height="60"> | [**Mobile Middleware Research Group**](https://github.com/MMw-Unibo) | [website]( https://site.unibo.it/middleware/en) |
