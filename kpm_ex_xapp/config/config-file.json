@@ -1,0 +1,66 @@
+{
+    "name": "kpm-xapp",
+    "version": "0.1.0",
+    "containers": [
+        {
+            "name": "kpm-xapp",
+            "image": {
+                "registry": "docker.io",
+                "name": "angeloferaudo/kpm-xapp",
+                "tag": "0.1.0"
+            }
+        }
+    ],
+    "livenessProbe": {
+        "httpGet": {
+            "path": "ric/v1/health/alive",
+            "port": 8080
+        },
+        "initialDelaySeconds": 5,
+        "periodSeconds": 15
+    },
+    "readinessProbe": {
+        "httpGet": {
+            "path": "ric/v1/health/ready",
+            "port": 8080
+        },
+        "initialDelaySeconds": 5,
+        "periodSeconds": 15
+    },
+    "messaging": {
+        "ports": [
+            {
+                "name": "http",
+                "container": "kpm-xapp",
+                "port": 8080,
+                "description": "http service"
+            },
+            {
+                "name": "rmrroute",
+                "container": "kpm-xapp",
+                "port": 4561,
+                "description": "rmr route port"
+            },
+            {
+                "name": "rmrdata",
+                "container": "kpm-xapp",
+                "port": 4560,
+                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "RIC_INDICATION"],
+                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ"],
+                "mtypes" : [
+                    {"name":"TESTNAME1","id":55555},
+                    {"name":"TESTNAME2","id":55556}
+                ],
+                "policies": [1],
+                "description": "rmr data port for kpm-xapp"
+            }
+        ]
+    },
+    "controls": {
+        "subscription": {
+          "url": "http://service-ricxapp-kpm-xapp-http:8080/",
+          "clientEndpoint": "service-ricxapp-kpm-xapp-http"
+        }
+      }
+
+}
