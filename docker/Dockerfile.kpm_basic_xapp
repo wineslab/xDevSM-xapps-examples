@@ -21,8 +21,6 @@ RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
 RUN dpkg -i riclibe2ap_${e2ap_version}_amd64.deb
 RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
 
-RUN ls /usr/local/lib/
-
 FROM python:3.8-slim
 
 ARG rmr_version=4.8.0
@@ -30,7 +28,6 @@ ARG e2ap_version=1.1.0
 
 COPY --from=stretch /usr/local/lib/librmr_si.so.${rmr_version} /usr/local/lib/librmr_si.so
 COPY --from=stretch /usr/local/lib/libriclibe2ap.so.${e2ap_version} /usr/local/lib/libriclibe2ap.so
-COPY ../xapp_framework .
 RUN chmod -R 755 /usr/local/lib/librmr_si.so
 RUN chmod -R 755 /usr/local/lib/libriclibe2ap.so
 
@@ -43,16 +40,18 @@ RUN mkdir -p /ws
 RUN chmod -R 755 /ws
 WORKDIR "/ws" 
 
-COPY requirements.txt .
-COPY . .
+COPY kpm_basic_xapp .
+COPY xDevSM ./xDevSM
 
 
 # COPY ./sm_py_framework/lib/*.so /usr/local/lib/
 
 RUN pip install -r requirements.txt
+RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.8/site-packages/ricxappframe/e2ap/asn1.py
+
 
 ENV CONFIG_FILE=/ws/config/config-file.json
-ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xapp_framework/sm_py_framework/lib
+ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
 
 # This is used to supply a static route table which can be used for debugging, 
 # testing, or if no route table generator process is being used to supply the route table. 
@@ -62,7 +61,7 @@ ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xapp_framework/sm_py_framew
 ENV RMR_SEED_RT ./config/uta_rtg.rt
 
 # Automatic start
-# CMD ["python", "main.py"]
+# CMD ["python", "kpm_xapp.py"]
 
 # Manual start
 ENTRYPOINT ["sleep", "infinity"]

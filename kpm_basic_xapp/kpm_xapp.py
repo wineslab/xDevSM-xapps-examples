@@ -86,7 +86,7 @@ class KpmXapp(kpmframe.XappKpmFrame):
     
 
 def main():
-    xapp = KpmXapp("kpm-xapp","0.0.0.0",8080)
+    xapp = KpmXapp("kpm-basic-xapp","0.0.0.0",8080)
 
 
 if __name__ == '__main__':
