@@ -61,7 +61,7 @@ ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
 ENV RMR_SEED_RT ./config/uta_rtg.rt
 
 # Automatic start
-# CMD ["python", "kpm_xapp.py"]
+CMD ["python", "kpm_xapp.py"]
 
 # Manual start
-ENTRYPOINT ["sleep", "infinity"]
+# ENTRYPOINT ["sleep", "infinity"]

@@ -26,14 +26,15 @@ class KpmXapp(kpmframe.XappKpmFrame):
 
     def logic(self):
         time.sleep(30)
-        # The logic considers each gnb available for that RIC
+        
         self.register_ind_msg_callback(handler=self.indication_callback)
         self.register_sub_fail_callback(handler=self.sub_failed_callback)
         gnb_list = self.get_list_gnb_ids()
         if len(gnb_list) == 0:
             self.logger.error("no gnb available")
             return
-
+        
+        # The logic considers each gnb available for that RIC
         for index, gnb in enumerate(gnb_list):
             self.logger.info("there are some gnbs available selecting the first..")
             json_obj = self.get_ran_info(e2node=gnb)
@@ -50,8 +51,8 @@ class KpmXapp(kpmframe.XappKpmFrame):
             self.logger.debug("Available functions: {}".format(func_def_dict))
 
             # Only one ran function format at time is supported for now
-            # Selecting format 4 or 1  (these are coherent with the wrapper provided)
-            # If you want to support more format, change function gen_action_definition in wrapper
+            # Selecting format 4 or 1 (these are coherent with the wrapper provided)
+            # If you want to support more formats, change function gen_action_definition in wrapper
             func_def_sub_dict = {}
             selected_format = format_action_def_e.END_ACTION_DEFINITION
             if len(func_def_dict[format_action_def_e.FORMAT_4_ACTION_DEFINITION]) == 0:
