@@ -27,7 +27,7 @@ docker push <your_username>/kpm-basic-xapp:0.1.0
 ```
 
 Change the xApp config file (**xapps-repo → kpm_basic_xapp → config**):
-```json
+```javascript
  // config-file.json
  //...
     "containers": [
