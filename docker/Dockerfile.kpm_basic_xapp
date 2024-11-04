@@ -5,15 +5,16 @@ RUN apt-get update && \
         wget gcc musl-dev
 
 ARG rmr_version=4.8.0
-ARG e2ap_version=1.1.0
+ARG e2ap_version=2.0
 
 # Note: O-RAN-SC only publishes packages for Debian stretch, but stretch does not get official Rust 1.63 updates.
 #       Installing this on Debian bullseye seems to work... Should probably request newer packages from O-RAN-SC.
 RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr_${rmr_version}_amd64.deb/download.deb
 RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr-dev_${rmr_version}_amd64.deb/download.deb
 
-RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/riclibe2ap_${e2ap_version}_amd64.deb/download.deb
-RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/riclibe2ap-dev_${e2ap_version}_amd64.deb/download.deb
+# Custom e2ap
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap_${e2ap_version}_amd64.deb
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap-dev_${e2ap_version}_amd64.deb
 
 RUN dpkg -i rmr_${rmr_version}_amd64.deb
 RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
@@ -24,10 +25,11 @@ RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
 FROM python:3.8-slim
 
 ARG rmr_version=4.8.0
-ARG e2ap_version=1.1.0
+ARG e2ap_version=2.0
 
 COPY --from=stretch /usr/local/lib/librmr_si.so.${rmr_version} /usr/local/lib/librmr_si.so
-COPY --from=stretch /usr/local/lib/libriclibe2ap.so.${e2ap_version} /usr/local/lib/libriclibe2ap.so
+COPY --from=stretch /usr/local/lib/libriclibe2ap.so /usr/local/lib/libriclibe2ap.so
+
 RUN chmod -R 755 /usr/local/lib/librmr_si.so
 RUN chmod -R 755 /usr/local/lib/libriclibe2ap.so
 
