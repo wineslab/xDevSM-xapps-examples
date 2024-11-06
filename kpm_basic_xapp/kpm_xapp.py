@@ -39,16 +39,16 @@ class KpmXapp(kpmframe.XappKpmFrame):
             self.logger.info("there are some gnbs available selecting the first..")
             json_obj = self.get_ran_info(e2node=gnb)
 
+            ran_function_description = self.get_ran_function_description(json_ran_info=json_obj)
+            self.logger.info("end decoding {}".format(ran_function_description))
+            func_def_dict = ran_function_description.get_dict_of_values()
+            self.logger.debug("Available functions: {}".format(func_def_dict))
+
             if json_obj["connectionStatus"] != "CONNECTED":
                 self.logger.info("E2 node {} not connected! Skipping...".format(gnb.inventory_name))
                 continue
             
             self.logger.info("subscribing to uri {}".format(self.uri_subscriptions))
-
-            ran_function_description = self.get_ran_function_description(json_ran_info=json_obj)
-            self.logger.info("end decoding {}".format(ran_function_description))
-            func_def_dict = ran_function_description.get_dict_of_values()
-            self.logger.debug("Available functions: {}".format(func_def_dict))
 
             # Only one ran function format at time is supported for now
             # Selecting format 4 or 1 (these are coherent with the wrapper provided)
