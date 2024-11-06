@@ -1,0 +1,62 @@
+{
+    "name": "rc-basic-xapp",
+    "version": "0.1.0-dev",
+    "containers": [
+        {
+            "name": "rc-basic-xapp",
+            "image": {
+                "registry": "docker.io",
+                "name": "angeloferaudo/rc-basic-xapp",
+                "tag": "0.1.0-dev"
+            }
+        }
+    ],
+    "livenessProbe": {
+        "httpGet": {
+            "path": "ric/v1/health/alive",
+            "port": 8080
+        },
+        "initialDelaySeconds": 5,
+        "periodSeconds": 15
+    },
+    "readinessProbe": {
+        "httpGet": {
+            "path": "ric/v1/health/ready",
+            "port": 8080
+        },
+        "initialDelaySeconds": 5,
+        "periodSeconds": 15
+    },
+    "messaging": {
+        "ports": [
+            {
+                "name": "http",
+                "container": "rc-basic-xapp",
+                "port": 8080,
+                "description": "http service"
+            },
+            {
+                "name": "rmrroute",
+                "container": "rc-basic-xapp",
+                "port": 4561,
+                "description": "rc route port"
+            },
+            {
+                "name": "rmrdata",
+                "container": "rc-basic-xapp",
+                "port": 4560,
+                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE"],
+                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "RIC_CONTROL_REQ"],
+                "policies": [1],
+                "description": "rmr data port for rc-xapp"
+            }
+        ]
+    },
+    "controls": {
+        "subscription": {
+          "url": "http://service-ricxapp-rc-basic-xapp-http:8080/",
+          "clientEndpoint": "service-ricxapp-rc-basic-xapp-http"
+        }
+      }
+
+}
