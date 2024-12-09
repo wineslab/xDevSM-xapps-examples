@@ -28,8 +28,14 @@ class RCXapp(rc_frame.XappRCFrame):
 
         ran_function_description = self.get_ran_function_description(json_ran_info=gnb_info)
         
+        self.logger.info("GLOBAL ID: {}".format(gnb.global_nb_id))
+        self.logger.info("INVENTORY NAME: {}".format(gnb.inventory_name))
         # Printing ran function description
-        ran_function_description.get_available_rc_functions()
+        ran_function_description.print_rc_functions()
+
+        # FIXME not complete
+        self.send_control_request(e2_node_id=gnb.inventory_name, func_def=ran_function_description)
+
 
 
 def main():
