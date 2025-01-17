@@ -13,8 +13,8 @@ RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/pack
 RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr-dev_${rmr_version}_amd64.deb/download.deb
 
 # Custom e2ap
-RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap_${e2ap_version}_amd64.deb
-RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap-dev_${e2ap_version}_amd64.deb
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/dev/riclibe2ap_${e2ap_version}_amd64.deb
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/dev/riclibe2ap-dev_${e2ap_version}_amd64.deb
 
 RUN dpkg -i rmr_${rmr_version}_amd64.deb
 RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
