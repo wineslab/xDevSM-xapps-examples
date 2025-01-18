@@ -11,6 +11,7 @@ class RCXapp(rc_frame.XappRCFrame):
         self.logic()
 
     def logic(self):
+        self.run(thread=True)
         time.sleep(30) # waiting for registrations
 
         # add callbacks
@@ -35,6 +36,7 @@ class RCXapp(rc_frame.XappRCFrame):
 
         # FIXME not complete
         self.send_control_request(e2_node_id=gnb.inventory_name, func_def=ran_function_description)
+
 
 
 
