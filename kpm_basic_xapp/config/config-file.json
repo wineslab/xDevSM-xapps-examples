@@ -1,13 +1,13 @@
 {
     "name": "kpm-basic-xapp",
-    "version": "0.1.0-dev",
+    "version": "1.0.0",
     "containers": [
         {
             "name": "kpm-basic-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/kpm-basic-xapp",
-                "tag": "0.1.0-dev"
+                "tag": "1.0.0"
             }
         }
     ],
