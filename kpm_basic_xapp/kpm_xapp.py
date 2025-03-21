@@ -16,8 +16,8 @@ from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
 
 
 class KpmXapp(kpmframe.XappKpmFrame):
-    def __init__(self, xapp_name, address, port, organization, token, bucket, influxdb_end_point=None):
-        super().__init__(xapp_name, address, port)
+    def __init__(self, address, port, organization, token, bucket, influxdb_end_point=None):
+        super().__init__(address, port)
         self.client_influx = None
         self.write_api = None
         self.bucket = bucket
@@ -154,7 +154,7 @@ class KpmXapp(kpmframe.XappKpmFrame):
     
 
 def main(args):
-    xapp = KpmXapp("kpm-basic-xapp","0.0.0.0", 8080, args.organization, args.token, args.bucket, args.influx_end_point)
+    xapp = KpmXapp("0.0.0.0", 8080, args.organization, args.token, args.bucket, args.influx_end_point)
     
 
 

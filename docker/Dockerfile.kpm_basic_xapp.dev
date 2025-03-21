@@ -53,6 +53,7 @@ RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/'
 
 ENV CONFIG_FILE=/ws/config/config-file.json
 ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
+ENV PLT_NAMESPACE="ricplt"
 
 # This is used to supply a static route table which can be used for debugging, 
 # testing, or if no route table generator process is being used to supply the route table. 

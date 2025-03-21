@@ -1,6 +1,7 @@
 {
     "name": "kpm-basic-xapp",
     "version": "0.1.0-dev",
+    "APP_NAMESPACE": "ricxapp",
     "containers": [
         {
             "name": "kpm-basic-xapp",
