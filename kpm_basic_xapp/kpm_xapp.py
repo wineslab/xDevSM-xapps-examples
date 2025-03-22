@@ -40,8 +40,14 @@ class KpmXapp(kpmframe.XappKpmFrame):
         gnbid = meid.decode('utf-8')
         self.logger.info("Received indication message from {}".format(gnbid))        
         # Decoding sender_name
-        my_string = bytes(np.ctypeslib.as_array(ind_hdr.data.kpm_ric_ind_hdr_format_1.sender_name.contents.buf, shape = (ind_hdr.data.kpm_ric_ind_hdr_format_1.sender_name.contents.len,)))
-        sender_name = my_string.decode('utf-8') 
+        sender_name = None
+        if ind_hdr.data.kpm_ric_ind_hdr_format_1.sender_name:
+            my_string = bytes(np.ctypeslib.as_array(ind_hdr.data.kpm_ric_ind_hdr_format_1.sender_name.contents.buf, shape = (ind_hdr.data.kpm_ric_ind_hdr_format_1.sender_name.contents.len,)))
+            sender_name = my_string.decode('utf-8') 
+        
+        if sender_name is None:
+            self.logger.info("Sender name not specified in the indication message")
+
         if not self.client_influx is None:
             if ind_msg.type.value == format_ind_msg_e.FORMAT_3_INDICATION_MESSAGE:
                 for i in range(ind_msg.data.frm_3.ue_meas_report_lst_len):
