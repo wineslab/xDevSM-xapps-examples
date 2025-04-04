@@ -13,6 +13,7 @@ from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
 from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
 from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
 
+from process_config_file import extract_config_fields, write_routing_table
 
 
 class KpmXapp(kpmframe.XappKpmFrame):
@@ -160,6 +161,8 @@ class KpmXapp(kpmframe.XappKpmFrame):
     
 
 def main(args):
+    # app_name, app_namespace = extract_config_fields(args.config_file)
+    # write_routing_table(app_name, app_namespace, args.route_file)
     xapp = KpmXapp("0.0.0.0", 8080, args.organization, args.token, args.bucket, args.influx_end_point)
     
 
@@ -178,6 +181,14 @@ if __name__ == '__main__':
     
     parser.add_argument("-b", "--bucket", metavar="<bucket>",
                         help="influx db bucket", type=str, default="xapp_bucket")
+
+    parser.add_argument("-c", "--config_file", metavar="<config_file",
+                        help="path of xApp config file for parsing app name and namespace",
+                        type="str", default="./config/config-file.json")
+
+    parser.add_argument("-r", "--route_file", metavar="<route_file",
+                        help="path of xApp route file",
+                        type="str", default="./config/uta_rtg.rt")
     
     args = parser.parse_args()
     
