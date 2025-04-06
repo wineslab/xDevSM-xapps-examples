@@ -158,13 +158,11 @@ class KpmXapp(kpmframe.XappKpmFrame):
             self.client_influx.close()
         super().terminate(signum, frame)
 
-    
 
 def main(args):
-    # app_name, app_namespace = extract_config_fields(args.config_file)
-    # write_routing_table(app_name, app_namespace, args.route_file)
+    app_name, app_namespace = extract_config_fields(args.config_file)
+    write_routing_table(app_name, app_namespace, args.route_file)
     xapp = KpmXapp("0.0.0.0", 8080, args.organization, args.token, args.bucket, args.influx_end_point)
-    
 
 
 if __name__ == '__main__':
