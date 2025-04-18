@@ -6,8 +6,8 @@ import xDevSM.xapp_rc_frame as rc_frame
 
 
 class RCXapp(rc_frame.XappRCFrame):
-    def __init__(self, address, port):
-        super().__init__( address, port)
+    def __init__(self, address):
+        super().__init__(address)
         self.logic()
 
     def logic(self):
@@ -41,7 +41,7 @@ class RCXapp(rc_frame.XappRCFrame):
 
 
 def main():
-    xapp = RCXapp("0.0.0.0",8080)
+    xapp = RCXapp("0.0.0.0")
 
 
 if __name__ == '__main__':
