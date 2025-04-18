@@ -12,12 +12,11 @@ from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
 from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
 from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
 from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
-
-
+from xDevSM.utils.utility import write_routing_table
 
 class KpmXapp(kpmframe.XappKpmFrame):
-    def __init__(self, address, port, organization, token, bucket, influxdb_end_point=None):
-        super().__init__(address, port)
+    def __init__(self, address, organization, token, bucket, influxdb_end_point=None, route_file=None):
+        super().__init__(address)
         self.client_influx = None
         self.write_api = None
         self.bucket = bucket
@@ -29,6 +28,11 @@ class KpmXapp(kpmframe.XappKpmFrame):
                     org=organization
             )
             self.write_api = self.client_influx.write_api(write_options=SYNCHRONOUS)
+        
+        if route_file is None:
+            route_file = "./config/uta_rtg.rt"
+        write_routing_table(self.get_xapp_name(), self.get_app_namespace(), self.rmr_port, route_file)
+        
         self.logic()
     
     def _post_init(self, xapp):
@@ -157,11 +161,9 @@ class KpmXapp(kpmframe.XappKpmFrame):
             self.client_influx.close()
         super().terminate(signum, frame)
 
-    
 
 def main(args):
-    xapp = KpmXapp("0.0.0.0", 8080, args.organization, args.token, args.bucket, args.influx_end_point)
-    
+    xapp = KpmXapp("0.0.0.0", args.organization, args.token, args.bucket, args.influx_end_point, args.route_file)
 
 
 if __name__ == '__main__':
@@ -178,6 +180,10 @@ if __name__ == '__main__':
     
     parser.add_argument("-b", "--bucket", metavar="<bucket>",
                         help="influx db bucket", type=str, default="xapp_bucket")
+
+    parser.add_argument("-r", "--route_file", metavar="<route_file>",
+                        help="path of xApp route file",
+                        type=str, default="./config/uta_rtg.rt")
     
     args = parser.parse_args()
     
