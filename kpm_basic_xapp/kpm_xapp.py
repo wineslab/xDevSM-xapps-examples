@@ -2,6 +2,7 @@ import time
 import argparse
 import influxdb_client
 import numpy as np
+import pandas as pd
 from influxdb_client.client.write_api import SYNCHRONOUS
 
 import setup_imports
@@ -15,12 +16,15 @@ from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
 from xDevSM.utils.utility import write_routing_table
 
 class KpmXapp(kpmframe.XappKpmFrame):
-    def __init__(self, address, organization, token, bucket, influxdb_end_point=None, route_file=None):
+    def __init__(self, address, organization, token, bucket, influxdb_end_point=None, route_file=None, csv_file=None):
         super().__init__(address)
         self.client_influx = None
         self.write_api = None
         self.bucket = bucket
         self.org = organization
+        self.df = None
+        self.df_dict = {}
+        self.csv_file = csv_file
         if not influxdb_end_point is None:
             self.client_influx = influxdb_client.InfluxDBClient(
                     url=influxdb_end_point,
@@ -29,10 +33,15 @@ class KpmXapp(kpmframe.XappKpmFrame):
             )
             self.write_api = self.client_influx.write_api(write_options=SYNCHRONOUS)
         
-        if route_file is None:
-            route_file = "./config/uta_rtg.rt"
+        # if route_file is None:
+        #     route_file = "./config/uta_rtg.rt"
         write_routing_table(self.get_xapp_name(), self.get_app_namespace(), self.rmr_port, route_file)
         
+        if not csv_file is None:
+            self.df_dict = {}
+            self.df_dict["ue_id"] = []
+            self.df_dict["gnb_id"] = []
+
         self.logic()
     
     def _post_init(self, xapp):
@@ -52,27 +61,33 @@ class KpmXapp(kpmframe.XappKpmFrame):
         if sender_name is None:
             self.logger.info("Sender name not specified in the indication message")
 
-        if not self.client_influx is None:
-            if ind_msg.type.value == format_ind_msg_e.FORMAT_3_INDICATION_MESSAGE:
-                for i in range(ind_msg.data.frm_3.ue_meas_report_lst_len):
-                    # for each ue
-                    meas_report_ue = ind_msg.data.frm_3.meas_report_per_ue[i]
-                    # ue id
-                    ue_id = self.get_ue_id(meas_report_ue.ue_meas_report_lst)
-                    self.logger.info("gnb: {}, sender_name: {}, ue: {}".format(gnbid, sender_name, ue_id))
-                    ind_msg_format_1 = meas_report_ue.ind_msg_format_1
-                    for j in range(ind_msg_format_1.meas_data_lst_len):
-                        meas_data_lst = ind_msg_format_1.meas_data_lst
-                        for k in range(meas_data_lst[j].meas_record_len):
-                            meas_record_lst_el = meas_data_lst[j].meas_record_lst[k]
-                            if ind_msg_format_1.meas_info_lst[k].meas_type.type.value == meas_type_enum.NAME_MEAS_TYPE:
+        
+        if ind_msg.type.value == format_ind_msg_e.FORMAT_3_INDICATION_MESSAGE:
+            for i in range(ind_msg.data.frm_3.ue_meas_report_lst_len):
+                # for each ue
+                meas_report_ue = ind_msg.data.frm_3.meas_report_per_ue[i]
+                # ue id
+                ue_id = self.get_ue_id(meas_report_ue.ue_meas_report_lst)
+                self.logger.info("gnb: {}, sender_name: {}, ue: {}".format(gnbid, sender_name, ue_id))
+                ind_msg_format_1 = meas_report_ue.ind_msg_format_1
+                for j in range(ind_msg_format_1.meas_data_lst_len):
+                    meas_data_lst = ind_msg_format_1.meas_data_lst
+                    for k in range(meas_data_lst[j].meas_record_len):
+                        meas_record_lst_el = meas_data_lst[j].meas_record_lst[k]
+                        if ind_msg_format_1.meas_info_lst[k].meas_type.type.value == meas_type_enum.NAME_MEAS_TYPE:
+                            if not self.client_influx is None:
                                 self.store_on_influx(gnb_id=gnbid, ue_id=ue_id, meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
                                                     meas_record=meas_record_lst_el)
-                            else:
-                                self.logger.info("Not supported meas type {}".format(ind_msg_format_1.meas_info_lst[k].meas_type.type.value))
-            else:
-                self.logger.info("format not supported for storing")
+                            if not self.csv_file is None:
+                                self.store_to_csv(gnb_id=gnbid, ue_id=ue_id, meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
+                                                meas_record=meas_record_lst_el)
+                        else:
+                            self.logger.info("Not supported meas type {}".format(ind_msg_format_1.meas_info_lst[k].meas_type.type.value))
         else:
+            self.logger.info("format not supported for storing")
+        
+        if self.client_influx is None and self.csv_file is None:
+            # self.logger.info("indication message not stored")
             ind_msg.print_meas_info(self.logger)
 
 
@@ -154,16 +169,35 @@ class KpmXapp(kpmframe.XappKpmFrame):
         
         # storing on influxdb
         self.write_api.write(bucket=self.bucket, org=self.org, record=p)
+    
+    def store_to_csv(self, gnb_id, ue_id, meas_type, meas_record):
+        ue_id = "ue_" + str(ue_id)
+        self.df_dict["ue_id"].append(ue_id)
+        self.df_dict["gnb_id"].append(gnb_id)
 
+        meas_type_bs = bytes(np.ctypeslib.as_array(meas_type.buf, shape = (meas_type.len,)))
+        meas_type_str = meas_type_bs.decode('utf-8')
+        if meas_type_str not in self.df_dict.keys():
+            self.df_dict[meas_type_str] = []
+        if meas_record.value.value == meas_value_e.INTEGER_MEAS_VALUE:
+            self.logger.info("{}:{}".format(meas_type_str, meas_record.union.int_val))
+            self.df_dict[meas_type_str].append(meas_record.union.int_val)
+        elif meas_record.value.value == meas_value_e.REAL_MEAS_VALUE:
+            self.logger.info("{}:{}".format(meas_type_str, meas_record.union.real_val))
+            self.df_dict[meas_type_str].append(meas_record.union.real_val)
 
     def terminate(self, signum, frame):
         if not self.client_influx is None:
             self.client_influx.close()
+        if self.df_dict is not None:
+            self.logger.info("storing data to csv file")
+            self.df = pd.DataFrame.from_dict(self.df_dict, orient='index').transpose()
+            self.df.to_csv(self.csv_file, index=False)
         super().terminate(signum, frame)
 
 
 def main(args):
-    xapp = KpmXapp("0.0.0.0", args.organization, args.token, args.bucket, args.influx_end_point, args.route_file)
+    xapp = KpmXapp("0.0.0.0", args.organization, args.token, args.bucket, args.influx_end_point, args.route_file, args.csv_file)
 
 
 if __name__ == '__main__':
@@ -184,6 +218,10 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--route_file", metavar="<route_file>",
                         help="path of xApp route file",
                         type=str, default="./config/uta_rtg.rt")
+    
+    parser.add_argument("-c", "--csv_file", metavar="<csv_file>",
+                        help="path of csv file",
+                        type=str)
     
     args = parser.parse_args()
     
