@@ -23,8 +23,18 @@ class RCXapp(rc_frame.XappRCFrame):
         
         # We send control only to the first gNB 
         # (usually this should be selected based on the inventory_name)
-        gnb = gnb_list[0]
+        gnb_to_use = None
+        for index, gnb in enumerate(gnb_list):
+            json_obj = self.get_ran_info(e2node=gnb)
+            if json_obj["connectionStatus"] == "CONNECTED":
+                gnb_to_use = gnb
+                break
+        
+        if gnb_to_use is None:
+            self.logger.error("No gNB connected")
+            return
 
+        self.logger.info("gnb selected: {}".format(gnb_to_use.inventory_name))
         gnb_info = self.get_ran_info(gnb)
 
         ran_function_description = self.get_ran_function_description(json_ran_info=gnb_info)
