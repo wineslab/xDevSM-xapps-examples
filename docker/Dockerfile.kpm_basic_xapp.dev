@@ -4,7 +4,7 @@ RUN apt-get update && \
     apt-get install -y \
         wget gcc musl-dev
 
-ARG rmr_version=4.8.0
+ARG rmr_version=4.9.4
 ARG e2ap_version=2.0
 
 # Note: O-RAN-SC only publishes packages for Debian stretch, but stretch does not get official Rust 1.63 updates.
@@ -24,7 +24,7 @@ RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
 
 FROM python:3.8-slim
 
-ARG rmr_version=4.8.0
+ARG rmr_version=4.9.4
 # ARG e2ap_version=1.1.0
 
 COPY --from=stretch /usr/local/lib/librmr_si.so.${rmr_version} /usr/local/lib/librmr_si.so
