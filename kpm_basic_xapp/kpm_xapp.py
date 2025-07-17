@@ -7,7 +7,7 @@ from influxdb_client.client.write_api import SYNCHRONOUS
 
 import setup_imports
 
-import xDevSM.xapp_kpm_frame as kpmframe
+import xDevSM.kpm.xapp_kpm_frame as kpmframe
 from xDevSM.sm_framework.py_oran.kpm.KpmIndicationMsg import measurements_ids
 from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
 from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
@@ -144,7 +144,7 @@ class KpmXapp(kpmframe.XappKpmFrame):
 
             # Sending subscription
             ev_trigger_tuple = (0, 1000)
-            status = self.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict)
+            status = self.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=1, sd=1)
 
             if status != 201:
                     self.logger.error("something during subscription went wrong - status: {}".format(status))
@@ -186,14 +186,14 @@ class KpmXapp(kpmframe.XappKpmFrame):
             self.logger.info("{}:{}".format(meas_type_str, meas_record.union.real_val))
             self.df_dict[meas_type_str].append(meas_record.union.real_val)
 
-    def terminate(self, signum, frame):
+    def terminating_xapp(self, signum, frame):
         if not self.client_influx is None:
             self.client_influx.close()
         if self.df_dict is not None:
             self.logger.info("storing data to csv file")
             self.df = pd.DataFrame.from_dict(self.df_dict, orient='index').transpose()
             self.df.to_csv(self.csv_file, index=False)
-        super().terminate(signum, frame)
+        super().terminating_xapp(signum, frame)
 
 
 def main(args):
