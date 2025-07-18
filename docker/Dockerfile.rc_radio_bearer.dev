@@ -59,8 +59,6 @@ ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
 # and the MEID map (between meid_map start and end records).
 ENV RMR_SEED_RT ./config/uta_rtg.rt
 
-# Automatic start
-# CMD ["python", "kpm_xapp.py"]
 
 # Manual start
 ENTRYPOINT ["sleep", "infinity"]

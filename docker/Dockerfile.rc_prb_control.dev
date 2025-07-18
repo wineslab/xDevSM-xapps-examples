@@ -41,11 +41,9 @@ RUN mkdir -p /ws
 RUN chmod -R 755 /ws
 WORKDIR "/ws" 
 
-COPY rc_basic_xapp .
+COPY prb_control_xapp .
 COPY xDevSM ./xDevSM
 
-
-# COPY ./sm_py_framework/lib/*.so /usr/local/lib/
 
 RUN pip install -r requirements.txt
 RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.8/site-packages/ricxappframe/e2ap/asn1.py

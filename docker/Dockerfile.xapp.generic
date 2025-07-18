@@ -1,11 +1,13 @@
 FROM python:3.8-slim as stretch
 
+ARG rmr_version=4.8.0
+ARG e2ap_version=2.0
+ARG XAPP_DIR
+
 RUN apt-get update && \
     apt-get install -y \
         wget gcc musl-dev
 
-ARG rmr_version=4.8.0
-ARG e2ap_version=2.0
 
 # Note: O-RAN-SC only publishes packages for Debian stretch, but stretch does not get official Rust 1.63 updates.
 #       Installing this on Debian bullseye seems to work... Should probably request newer packages from O-RAN-SC.
@@ -41,11 +43,10 @@ RUN mkdir -p /ws
 RUN chmod -R 755 /ws
 WORKDIR "/ws" 
 
-COPY rc_basic_xapp .
-COPY xDevSM ./xDevSM
+# COPY  ${XAPP_DIR} .
+COPY . .
+COPY ../xDevSM ./xDevSM
 
-
-# COPY ./sm_py_framework/lib/*.so /usr/local/lib/
 
 RUN pip install -r requirements.txt
 RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.8/site-packages/ricxappframe/e2ap/asn1.py
@@ -60,7 +61,6 @@ ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
 # The static route table may contain both the route table (between newrt start and end records), 
 # and the MEID map (between meid_map start and end records).
 ENV RMR_SEED_RT ./config/uta_rtg.rt
-
 
 # Manual start
 ENTRYPOINT ["sleep", "infinity"]
