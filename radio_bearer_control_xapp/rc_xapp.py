@@ -46,7 +46,7 @@ class RCXapp(RadioBearerControl):
         # Printing ran function description
         ran_function_description.print_rc_functions()
 
-        self.generate_send_control_request(e2_node_id=gnb.inventory_name,
+        self.send_control_request(e2_node_id=gnb.inventory_name,
                                             ran_func_dsc=ran_function_description,
                                             ue_id=None  # Use mock UE ID
                                             )
