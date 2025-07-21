@@ -3,13 +3,12 @@ import argparse
 
 import setup_imports
 
-from xDevSM.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
+from xDevSM.rc.rc_connected_mode_mobility import ConnectedModeMobilityControl
 
 
-
-class RCXapp(RadioResourceAllocationControl):
-    def __init__(self, address, plmn_identity, sst, sd, min_prb_policy_ratio, max_prb_policy_ratio, dedicated_prb_policy_ratio):
-        super().__init__(address, plmn_identity, sst, sd, min_prb_policy_ratio, max_prb_policy_ratio, dedicated_prb_policy_ratio)
+class RCXapp(ConnectedModeMobilityControl):
+    def __init__(self, address, plmn_identity, nr_cell_id):
+        super().__init__(address, plmn_identity, nr_cell_id)
         self.logic()
 
     def logic(self):
@@ -49,14 +48,14 @@ class RCXapp(RadioResourceAllocationControl):
         self.send_control_request(e2_node_id=gnb.inventory_name,
                                             ran_func_dsc=ran_function_description,
                                             ue_id=None,  # Use mock UE ID
-                                            control_action_id=6) # Slice-level PRB quota
+                                            control_action_id=1) # Ho control
         
 
 
 
 
 def main(args):
-    xapp = RCXapp("0.0.0.0", args.plmn, args.sst, args.sd, args.min_prb_policy_ratio, args.max_prb_policy_ratio, args.dedicated_prb_policy_ratio)
+    xapp = RCXapp("0.0.0.0", args.plmn, args.nr_cell_id)
 
 
 if __name__ == '__main__':
@@ -64,16 +63,8 @@ if __name__ == '__main__':
 
     parser.add_argument("-p", "--plmn", metavar="<plmn>",
                         help="PLMN ID", type=str, default="00F110")
-    parser.add_argument("-s", "--sst", metavar="<sst>",
-                        help="SST", type=int, default=1)
-    parser.add_argument("-d", "--sd", metavar="<sd>",
-                        help="SD", type=int, default=1)
-    parser.add_argument("-r", "--min_prb_policy_ratio", metavar="<min_prb_policy_ratio>",
-                        help="Minimum PRB Policy Ratio", type=int, default=20)
-    parser.add_argument("-x", "--max_prb_policy_ratio", metavar="<max_prb_policy_ratio>",
-                        help="Maximum PRB Policy Ratio", type=int, default=80)
-    parser.add_argument("-y", "--dedicated_prb_policy_ratio", metavar="<dedicated_prb_policy_ratio>",
-                        help="Dedicated PRB Policy Ratio", type=int, default=5)
-    
+    parser.add_argument("-n", "--nr_cell_id", metavar="<nr_cell_id>",
+                        help="NR Cell ID", type=str, default="00000000000000000000111000000001")
+                        
     args = parser.parse_args()
     main(args)

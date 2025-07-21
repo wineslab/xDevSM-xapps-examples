@@ -48,12 +48,8 @@ class RCXapp(RadioBearerControl):
 
         self.send_control_request(e2_node_id=gnb.inventory_name,
                                             ran_func_dsc=ran_function_description,
-                                            ue_id=None  # Use mock UE ID
-                                            )
-        
-
-
-
+                                            ue_id=None,  # Use mock UE ID
+                                            control_action_id=2)  # QoS flow mapping configuration
 
 def main(args):
     xapp = RCXapp("0.0.0.0", args.drb_id, args.qos_flow_id, args.qos_flow_mapping_indication)
