@@ -1,3 +1,3 @@
-# RC XAPP (TODO)
+# RC XAPP
 
-Example of Radio Bearer Control RC xapp using the xDevSM framework 
+Example of Radio Resource Connected Mobility Control RC xapp using the xDevSM framework 

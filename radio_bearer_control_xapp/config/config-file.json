@@ -1,32 +1,16 @@
 {
     "name": "radio-bearer-control-xapp",
-    "version": "0.1.0-dev",
+    "version": "0.2.0-dev",
     "containers": [
         {
             "name": "radio-bearer-control-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/radio-bearer-control-xapp",
-                "tag": "0.1.0-dev"
+                "tag": "0.2.0-dev"
             }
         }
     ],
-    "livenessProbe": {
-        "httpGet": {
-            "path": "ric/v1/health/alive",
-            "port": 8080
-        },
-        "initialDelaySeconds": 5,
-        "periodSeconds": 15
-    },
-    "readinessProbe": {
-        "httpGet": {
-            "path": "ric/v1/health/ready",
-            "port": 8080
-        },
-        "initialDelaySeconds": 5,
-        "periodSeconds": 15
-    },
     "messaging": {
         "ports": [
             {

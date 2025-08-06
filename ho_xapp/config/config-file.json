@@ -1,13 +1,13 @@
 {
     "name": "ho-control-xapp",
-    "version": "0.1.0-dev",
+    "version": "0.2.0-dev",
     "containers": [
         {
             "name": "ho-control-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/ho-control-xapp",
-                "tag": "0.1.0-dev"
+                "tag": "0.2.0-dev"
             }
         }
     ],
