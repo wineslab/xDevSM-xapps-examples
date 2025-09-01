@@ -212,7 +212,6 @@ def main(args):
         # Selecting only supported action definition
         func_def_sub_dict[selected_format] = func_def_dict[selected_format]
 
-        func_def_sub_dict[selected_format] = func_def_dict[selected_format]
         logger.debug("[Main] Selected functions: {}".format(func_def_dict[selected_format]))
 
         # Sending subscription
