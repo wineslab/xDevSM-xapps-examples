@@ -135,7 +135,7 @@ class DataManager():
             self.df.to_csv(self.csv_file, index=False)
 
 
-def sub_failed_callback(self, json_data):
+def sub_failed_callback(json_data):
     logger.info("[Main]subscription failed: {}".format(json_data))
 
 
@@ -178,54 +178,64 @@ def main(args):
         return
     
     # The logic considers each gnb available for that RIC
-    for index, gnb in enumerate(gnb_list):
-        # Sleeping to ensure registration of the xapp worked (no callback defined by the osc framework)
-        time.sleep(10) 
-        logger.info("[Main] there are some gnbs available selecting the first..")
-        json_obj = xapp_gen.get_ran_info(e2node=gnb)
+    selected_gnb = None
+    gnb_info = None
+    for index, gnb in enumerate(gnb_list): 
+        logger.info("[Main] Selecting the first gnb connected")
+        gnb_info = xapp_gen.get_ran_info(e2node=gnb)
         
-        ran_function_description = kpm_xapp.get_ran_function_description(json_ran_info=json_obj)
-        func_def_dict = ran_function_description.get_dict_of_values()
         
-        logger.debug("[Main] Available functions: {}".format(func_def_dict))
-
         # the behavior of the xapp is to subscribe to all the available gnbs
-        if json_obj["connectionStatus"] != "CONNECTED":
+        if gnb_info["connectionStatus"] != "CONNECTED":
             logger.info("[Main] E2 node {} not connected! Skipping...".format(gnb.inventory_name))
             continue
-
-        # Only one ran function format at time is supported for now
-        # Selecting format 4 or 1 (these are coherent with the wrapper provided)
-        # If you want to support more formats, change function gen_action_definition in wrapper
-        func_def_sub_dict = {}
-        selected_format = format_action_def_e.END_ACTION_DEFINITION
-        if len(func_def_dict[format_action_def_e.FORMAT_4_ACTION_DEFINITION]) == 0:
-            selected_format = format_action_def_e.FORMAT_1_ACTION_DEFINITION
-        else:
-            selected_format = format_action_def_e.FORMAT_4_ACTION_DEFINITION
         
-        if selected_format == format_action_def_e.END_ACTION_DEFINITION:
-            logger.error("No supported action definition format")
-            kpm_xapp.terminate(signal.SIGTERM, None)
-            return
+        selected_gnb = gnb
+        break
+    
+    if selected_gnb is None:
+        logger.info("[Main] No gnb connected")
+        kpm_xapp.terminate(signal.SIGTERM, None)
+        return
+    
+    # There exist one gnb available
+    ran_function_description = kpm_xapp.get_ran_function_description(json_ran_info=gnb_info)
+    func_def_dict = ran_function_description.get_dict_of_values()
+        
+    logger.debug("[Main] Available functions: {}".format(func_def_dict))
 
-        # Selecting only supported action definition
-        func_def_sub_dict[selected_format] = func_def_dict[selected_format]
+    # Only one ran function format at time is supported for now
+    # Selecting format 4 or 1 (these are coherent with the wrapper provided)
+    # If you want to support more formats, change function gen_action_definition in wrapper
+    func_def_sub_dict = {}
+    selected_format = format_action_def_e.END_ACTION_DEFINITION
+    if len(func_def_dict[format_action_def_e.FORMAT_4_ACTION_DEFINITION]) == 0:
+        selected_format = format_action_def_e.FORMAT_1_ACTION_DEFINITION
+    else:
+        selected_format = format_action_def_e.FORMAT_4_ACTION_DEFINITION
+    
+    if selected_format == format_action_def_e.END_ACTION_DEFINITION:
+        logger.error("[Main] No supported action definition format")
+        kpm_xapp.terminate(signal.SIGTERM, None)
+        return
 
-        logger.debug("[Main] Selected functions: {}".format(func_def_dict[selected_format]))
+    # Selecting only supported action definition
+    func_def_sub_dict[selected_format] = func_def_dict[selected_format]
 
-        # Sending subscription
-        ev_trigger_tuple = (0, 1000)
-        status = kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=args.sst, sd=args.sd)
+    logger.debug("[Main] Selected functions: {}".format(func_def_dict[selected_format]))
+    time.sleep(5)
+    # Sending subscription
+    ev_trigger_tuple = (0, 1000)
+    status = kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=args.sst, sd=args.sd)
 
-        if status != 201:
-            logger.error("[Main] something during subscription went wrong - status: {}".format(status))
-            return
+    if status != 201:
+        logger.error("[Main] something during subscription went wrong - status: {}".format(status))
+        return
 
-        # Start running after finishing subscription requests
-        if index == len(gnb_list)-1:
-            logger.info("[Main] Starting xapp")
-            xapp_gen.run()
+    # Start running after finishing subscription requests
+
+    logger.info("[Main] Starting xapp")
+    xapp_gen.run()
 
 
 
