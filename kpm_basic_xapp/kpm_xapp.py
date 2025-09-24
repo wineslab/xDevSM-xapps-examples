@@ -176,14 +176,21 @@ def main(args):
     if len(gnb_list) == 0:
         logger.info("[Main] no gnb available")
         return
-    
-    # The logic considers each gnb available for that RIC
+
+    if not args.gnb_target:
+        # This logic considers each gnb available for that RIC
+        logger.info("[Main] Selecting the first gnb connected")
+    else:
+        # This logic only considers the passed gnb
+        logger.info("[Main] Querying status of passed gnb {}".format(args.gnb_target))
+
     selected_gnb = None
     gnb_info = None
     for index, gnb in enumerate(gnb_list): 
-        logger.info("[Main] Selecting the first gnb connected")
+        if args.gnb_target and gnb.inventory_name != args.gnb_target:
+            continue
+
         gnb_info = xapp_gen.get_ran_info(e2node=gnb)
-        
         
         # the behavior of the xapp is to subscribe to all the available gnbs
         if gnb_info["connectionStatus"] != "CONNECTED":
@@ -194,7 +201,10 @@ def main(args):
         break
     
     if selected_gnb is None:
-        logger.info("[Main] No gnb connected")
+        if not args.gnb_target:
+            logger.info("[Main] No gnb connected")
+        else:
+            logger.info("[Main] Passed gnb {} not connected".format(args.gnb_target))
         kpm_xapp.terminate(signal.SIGTERM, None)
         return
     
@@ -266,6 +276,10 @@ if __name__ == '__main__':
     
     parser.add_argument("-c", "--csv_file", metavar="<csv_file>",
                         help="path of csv file",
+                        type=str)
+
+    parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
+                        help="gNB to subscribe to",
                         type=str)
     
     args = parser.parse_args()
