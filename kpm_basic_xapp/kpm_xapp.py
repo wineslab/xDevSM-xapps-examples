@@ -171,40 +171,9 @@ def main(args):
     signal.signal(signal.SIGINT, kpm_xapp.terminate)
     signal.signal(signal.SIGTERM, kpm_xapp.terminate)
 
-    
-    gnb_list = xapp_gen.get_list_gnb_ids()
-    if len(gnb_list) == 0:
-        logger.info("[Main] no gnb available")
-        return
-
-    if not args.gnb_target:
-        # This logic considers each gnb available for that RIC
-        logger.info("[Main] Selecting the first gnb connected")
-    else:
-        # This logic only considers the passed gnb
-        logger.info("[Main] Querying status of passed gnb {}".format(args.gnb_target))
-
-    selected_gnb = None
-    gnb_info = None
-    for index, gnb in enumerate(gnb_list): 
-        if args.gnb_target and gnb.inventory_name != args.gnb_target:
-            continue
-
-        gnb_info = xapp_gen.get_ran_info(e2node=gnb)
-        
-        # the behavior of the xapp is to subscribe to all the available gnbs
-        if gnb_info["connectionStatus"] != "CONNECTED":
-            logger.info("[Main] E2 node {} not connected! Skipping...".format(gnb.inventory_name))
-            continue
-        
-        selected_gnb = gnb
-        break
-    
-    if selected_gnb is None:
-        if not args.gnb_target:
-            logger.info("[Main] No gnb connected")
-        else:
-            logger.info("[Main] Passed gnb {} not connected".format(args.gnb_target))
+    gnb, gnb_info = xapp_gen.get_selected_e2node_info(args.gnb_target)
+    if not gnb:
+        logger.info("[Main] Terminating xapp")
         kpm_xapp.terminate(signal.SIGTERM, None)
         return
     
