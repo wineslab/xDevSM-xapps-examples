@@ -1,3 +1,4 @@
 [submodule "xDevSM"]
 	path = xDevSM
+  branch = code_refactoring_target_gnb
 	url = git@github.com:wineslab/xDevSM.git
