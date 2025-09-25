@@ -158,28 +158,12 @@ class xAppMonControlContainer():
     
 
     def start(self):
-        time.sleep(5) # we need to wait the registration of RMR rule -> no callback defined in the osc framework
-        # Obtain gnb info
-        gnb_list = self.xapp_gen.get_list_gnb_ids()
-        if len(gnb_list) == 0:
-            self.xapp_gen.logger.info("[xAppMonControlContainer] no gnb available")
-            return
+        time.sleep(5)  # we need to wait the registration of RMR rule -> no callback defined in the osc framework
         
-        self.selected_gnb = None
-        gnb_info = None
-        # Selecting the first connected gNB
-        for gnb in gnb_list:
-            self.xapp_gen.logger.info("[xAppMonControlContainer] gNB found: {}".format(gnb))
-            gnb_info = self.xapp_gen.get_ran_info(e2node=gnb)
-            if gnb_info["connectionStatus"] != "CONNECTED":
-                self.xapp_gen.logger.info("[xAppMonControlContainer] E2 node {} not connected! Skipping...".format(gnb.inventory_name))
-                continue
-            self.selected_gnb = gnb
-            self.xapp_gen.logger.info("[xAppMonControlContainer] gnb selected: {}".format(self.selected_gnb.inventory_name))
-            break
-
-        if self.selected_gnb is None:
-            self.xapp_gen.logger.error("[xAppMonControlContainer] No gNB connected")
+        # Obtain gnb info
+        gnb, gnb_info = self.xapp_gen.get_selected_e2node_info(args.gnb_target)
+        if not gnb:
+            self.xapp_gen.logger.info("[Main] Terminating xapp")
             self.kpm_func.terminate(signal.SIGTERM, None)
             return
 
@@ -258,5 +242,8 @@ if __name__ == '__main__':
                         help="SD", type=int, default=0)
     parser.add_argument("-l", "--log_level", metavar="<log_level>",
                         help="Log level", type=str, default="INFO")
+    parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
+                        help="gNB to subscribe to",
+                        type=str)
 
     main(parser.parse_args())
