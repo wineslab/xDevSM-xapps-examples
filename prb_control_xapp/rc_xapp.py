@@ -56,11 +56,6 @@ def main(args):
         rc_xapp.terminate(signal.SIGTERM, None)
         return
 
-    xapp_gen.logger.info("[Main] gnb selected: {}".format(gnb.inventory_name))
-    
-    # Printing ran function description
-    gnb_info = xapp_gen.get_ran_info(gnb)
-
     ran_function_description = rc_xapp.get_ran_function_description(json_ran_info=gnb_info)
     ran_function_description.print_rc_functions()
 
