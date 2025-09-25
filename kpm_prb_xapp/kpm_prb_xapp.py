@@ -158,28 +158,12 @@ class xAppMonControlContainer():
     
 
     def start(self):
-        time.sleep(5) # we need to wait the registration of RMR rule -> no callback defined in the osc framework
-        # Obtain gnb info
-        gnb_list = self.xapp_gen.get_list_gnb_ids()
-        if len(gnb_list) == 0:
-            self.xapp_gen.logger.info("[xAppMonControlContainer] no gnb available")
-            return
+        time.sleep(5)  # we need to wait the registration of RMR rule -> no callback defined in the osc framework
         
-        self.selected_gnb = None
-        gnb_info = None
-        # Selecting the first connected gNB
-        for gnb in gnb_list:
-            self.xapp_gen.logger.info("[xAppMonControlContainer] gNB found: {}".format(gnb))
-            gnb_info = self.xapp_gen.get_ran_info(e2node=gnb)
-            if gnb_info["connectionStatus"] != "CONNECTED":
-                self.xapp_gen.logger.info("[xAppMonControlContainer] E2 node {} not connected! Skipping...".format(gnb.inventory_name))
-                continue
-            self.selected_gnb = gnb
-            self.xapp_gen.logger.info("[xAppMonControlContainer] gnb selected: {}".format(self.selected_gnb.inventory_name))
-            break
-
-        if self.selected_gnb is None:
-            self.xapp_gen.logger.error("[xAppMonControlContainer] No gNB connected")
+        # Obtain gnb info
+        gnb, gnb_info = self.xapp_gen.get_selected_e2node_info(args.gnb_target)
+        if not gnb:
+            self.xapp_gen.logger.info("[Main] Terminating xapp")
             self.kpm_func.terminate(signal.SIGTERM, None)
             return
 
@@ -189,7 +173,6 @@ class xAppMonControlContainer():
         self.xapp_gen.logger.info("[xAppMonControlContainer] plmn identity: {}".format(plmn_id))
         self.rc_func.set_plmn_identity(plmn_id)
 
-        
         # Get kpm data
         ran_function_description = self.kpm_func.get_ran_function_description(json_ran_info=gnb_info)
         func_def_dict = ran_function_description.get_dict_of_values()
@@ -219,17 +202,15 @@ class xAppMonControlContainer():
         func_def_sub_dict[selected_format] = func_def_dict[selected_format]
         
         ev_trigger_tuple = (0, self.event_trigger)
-        status = self.kpm_func.subscribe(gnb=self.selected_gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
+        status = self.kpm_func.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
 
         if status != 201:
-            self.xapp_gen.logger.error("[xAppMonControlContainer] Error subscribing to gNB {}: {}".format(self.selected_gnb.inventory_name, status))
+            self.xapp_gen.logger.error("[xAppMonControlContainer] Error subscribing to gNB {}: {}".format(self.gnb.inventory_name, status))
             self.kpm_func.terminate(signal.SIGTERM, None)
             return
         
         # Running xApp Thread
         self.xapp_gen.run()
-
-
 
 
 def main(args):
@@ -258,5 +239,8 @@ if __name__ == '__main__':
                         help="SD", type=int, default=0)
     parser.add_argument("-l", "--log_level", metavar="<log_level>",
                         help="Log level", type=str, default="INFO")
+    parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
+                        help="gNB to subscribe to",
+                        type=str)
 
     main(parser.parse_args())

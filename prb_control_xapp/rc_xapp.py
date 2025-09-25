@@ -50,28 +50,11 @@ def main(args):
     xapp_gen.run(thread=True)
     time.sleep(10)  # waiting for registrations
 
-    gnb_list = xapp_gen.get_list_gnb_ids()
-    if len(gnb_list) == 0:
-        logger.error("[Main] no gnb available")
+    gnb, gnb_info = xapp_gen.get_selected_e2node_info(args.gnb_target)
+    if not gnb:
+        logger.info("[Main] Terminating xapp")
+        rc_xapp.terminate(signal.SIGTERM, None)
         return
-    
-    # We send control only to the first gNB 
-    # (usually this should be selected based on the inventory_name)
-    gnb_to_use = None
-    for index, gnb in enumerate(gnb_list):
-        json_obj = xapp_gen.get_ran_info(e2node=gnb)
-        if json_obj["connectionStatus"] == "CONNECTED":
-            gnb_to_use = gnb
-            break
-    # gnb_to_use = gnb_list[0]
-    if gnb_to_use is None:
-        xapp_gen.logger.error("[Main] No gNB connected")
-        return
-
-    xapp_gen.logger.info("[Main] gnb selected: {}".format(gnb_to_use.inventory_name))
-    
-    # Printing ran function description
-    gnb_info = xapp_gen.get_ran_info(gnb_to_use)
 
     ran_function_description = rc_xapp.get_ran_function_description(json_ran_info=gnb_info)
     ran_function_description.print_rc_functions()
@@ -79,7 +62,7 @@ def main(args):
     rc_xapp.send(e2_node_id=gnb.inventory_name,
                 ran_func_dsc=ran_function_description,
                 ue_id=None,  # Use mock UE ID
-                control_action_id=6) # Slice-level PRB quota
+                control_action_id=6)  # Slice-level PRB quota
 
 
 if __name__ == '__main__':
@@ -97,6 +80,9 @@ if __name__ == '__main__':
                         help="Maximum PRB Policy Ratio", type=int, default=80)
     parser.add_argument("-y", "--dedicated_prb_policy_ratio", metavar="<dedicated_prb_policy_ratio>",
                         help="Dedicated PRB Policy Ratio", type=int, default=5)
+    parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
+                        help="gNB to subscribe to",
+                        type=str)
     
     args = parser.parse_args()
     main(args)

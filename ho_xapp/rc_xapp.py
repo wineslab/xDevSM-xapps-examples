@@ -44,28 +44,11 @@ def main(args):
     xapp_gen.run(thread=True)
     time.sleep(10)  # waiting for registrations
 
-    gnb_list = xapp_gen.get_list_gnb_ids()
-    if len(gnb_list) == 0:
-        logger.error("[Main] no gnb available")
+    gnb, gnb_info = xapp_gen.get_selected_e2node_info(args.gnb_target)
+    if not gnb:
+        xapp_gen.logger.info("[Main] Terminating xapp")
+        rc_xapp.terminate(signal.SIGTERM, None)
         return
-    
-    # We send control only to the first gNB 
-    # (usually this should be selected based on the inventory_name)
-    gnb_to_use = None
-    for index, gnb in enumerate(gnb_list):
-        json_obj = xapp_gen.get_ran_info(e2node=gnb)
-        if json_obj["connectionStatus"] == "CONNECTED":
-            gnb_to_use = gnb
-            break
-    # gnb_to_use = gnb_list[0]
-    if gnb_to_use is None:
-        xapp_gen.logger.error("[Main] No gNB connected")
-        return
-
-    xapp_gen.logger.info("[Main] gnb selected: {}".format(gnb_to_use.inventory_name))
-    
-    # Printing ran function description
-    gnb_info = xapp_gen.get_ran_info(gnb_to_use)
 
     ran_function_description = rc_xapp.get_ran_function_description(json_ran_info=gnb_info)
     ran_function_description.print_rc_functions()
@@ -83,6 +66,9 @@ if __name__ == '__main__':
                         help="PLMN ID", type=str, default="00F110")
     parser.add_argument("-n", "--nr_cell_id", metavar="<nr_cell_id>",
                         help="NR Cell ID", type=str, default="00000000000000000000111000000001")
+    parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
+                        help="gNB to subscribe to",
+                        type=str)
                         
     args = parser.parse_args()
     main(args)
