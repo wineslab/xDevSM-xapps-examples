@@ -3,6 +3,7 @@ import signal
 import numpy as np
 import setup_imports
 import time
+import pandas as pd
 from mdclogpy import Level
 
 # import xDevSM base xapp
@@ -27,8 +28,10 @@ string_to_level = {"DEBUG": Level.DEBUG,
 
 class xAppMonControlContainer():
     "This class manage xApp related messages and actions"
-    def __init__(self, xapp_gen: xDevSMRMRXapp, event_trigger, sst, sd, max_down_throughput, max_up_throughput):
+    def __init__(self, xapp_gen: xDevSMRMRXapp, gnb_target, csv_file, event_trigger, sst, sd, max_down_throughput, max_up_throughput):
         self.xapp_gen = xapp_gen
+        self.gnb_target = gnb_target
+        self.csv_file = csv_file
         self.event_trigger = event_trigger*1000
         self.sst = sst
         self.sd = sd
@@ -61,9 +64,23 @@ class xAppMonControlContainer():
         self.kpm_func.register_sub_fail_callback(self.sub_failed_callback)
 
         # Registering termination signal handlers
-        signal.signal(signal.SIGINT, self.kpm_func.terminate)
-        signal.signal(signal.SIGTERM, self.kpm_func.terminate)
+        signal.signal(signal.SIGINT, self.termination)
+        signal.signal(signal.SIGTERM, self.termination)
 
+        # Dataframe to store kpm    data 
+        self.df_dict = {}
+        self.df_dict["ue_id"] = []
+        self.df_dict["gnb_id"] = []
+        self.df_dict["MAX_PRB"] = []
+        self.df_dict["MIN_PRB"] = []
+
+    def termination(self, signum, frame):
+        print(self.df_dict)
+        if self.csv_file is not None:
+            df = pd.DataFrame.from_dict(self.df_dict, orient='index').transpose()
+            df.to_csv(self.csv_file, index=False)
+            self.xapp_gen.logger.info("[xAppMonControlContainer] Data saved to {}".format(self.csv_file))
+        self.kpm_func.terminate(signum, frame)
 
     def ind_msg_handler(self, ind_hdr, ind_msg, meid):
         """
@@ -90,6 +107,10 @@ class xAppMonControlContainer():
                 ue_id_value = self.kpm_func.get_ue_id(meas_report_ue.ue_meas_report_lst)
                 self.xapp_gen.logger.info("[xAppMonControlContainer]gnb: {}, sender_name: {}, ue: {}".format(gnbid, sender_name, ue_id_value))
                 ind_msg_format_1 = meas_report_ue.ind_msg_format_1
+                self.df_dict["ue_id"].append(ue_id_value)
+                self.df_dict["gnb_id"].append(gnbid)
+                self.df_dict["MAX_PRB"].append(self.rc_func.get_max_prb_policy_ratio())
+                self.df_dict["MIN_PRB"].append(self.rc_func.get_min_prb_policy_ratio())
                 for j in range(ind_msg_format_1.meas_data_lst_len):
                     meas_data_lst = ind_msg_format_1.meas_data_lst
                     for k in range(meas_data_lst[j].meas_record_len):
@@ -98,6 +119,8 @@ class xAppMonControlContainer():
                             #self.log_kpm_metrics(meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
                             #                        meas_record=meas_record_lst_el)
                             # Compute uplink and downlink bandwidth
+                            self.store_to_csv(gnb_id=gnbid, ue_id=ue_id_value, meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
+                                                meas_record=meas_record_lst_el)
                             tmp_down, tmp_up = self.compute_bandwidth(meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
                                                                     meas_record=meas_record_lst_el)
                             downlink_bandwidth = downlink_bandwidth + tmp_down
@@ -109,8 +132,8 @@ class xAppMonControlContainer():
                 # Here you can add the logic to handle the exceeded bandwidth, e.g., sending a control request
 
                 self.xapp_gen.logger.info("[xAppMonControlContainer] Downlink or Uplink Bandwidth exceeded the limit! Downlink: {}, Uplink: {}, xapp max prb now: {}".format(downlink_bandwidth, uplink_bandwidth, self.rc_func.get_max_prb_policy_ratio()))
-                if self.rc_func.get_max_prb_policy_ratio() > self.rc_func.get_min_prb_policy_ratio() + 10:
-                    new_max_prb = self.rc_func.get_max_prb_policy_ratio() - 10 # removing 10% or prb
+                if self.rc_func.get_max_prb_policy_ratio() > self.rc_func.get_min_prb_policy_ratio() + 5: # keeping a margin of 5%
+                    new_max_prb = self.rc_func.get_max_prb_policy_ratio() - 5 # removing 5% or prb
                     self.rc_func.set_max_prb_policy_ratio(new_max_prb)
                     # Sending SLICE-LEVEL PRB Quota
                 else:
@@ -156,13 +179,26 @@ class xAppMonControlContainer():
 
         return downlink_bandwidth, up_link_bandwidth
     
+    def store_to_csv(self,gnb_id, ue_id, meas_type, meas_record):
+        ue_id = "ue_" + str(ue_id)
+        
+
+        meas_type_bs = bytes(np.ctypeslib.as_array(meas_type.buf, shape = (meas_type.len,)))
+        meas_type_str = meas_type_bs.decode('utf-8')
+        if meas_type_str not in self.df_dict.keys():
+            self.df_dict[meas_type_str] = []
+        if meas_record.value.value == meas_value_e.INTEGER_MEAS_VALUE:
+            self.df_dict[meas_type_str].append(meas_record.union.int_val)
+        elif meas_record.value.value == meas_value_e.REAL_MEAS_VALUE:
+            self.df_dict[meas_type_str].append(meas_record.union.real_val)
+
 
     def start(self):
         time.sleep(5)  # we need to wait the registration of RMR rule -> no callback defined in the osc framework
         
         # Obtain gnb info
-        gnb, gnb_info = self.xapp_gen.get_selected_e2node_info(args.gnb_target)
-        if not gnb:
+        self.selected_gnb, gnb_info = self.xapp_gen.get_selected_e2node_info(self.gnb_target)
+        if not self.selected_gnb:
             self.xapp_gen.logger.info("[Main] Terminating xapp")
             self.kpm_func.terminate(signal.SIGTERM, None)
             return
@@ -202,7 +238,7 @@ class xAppMonControlContainer():
         func_def_sub_dict[selected_format] = func_def_dict[selected_format]
         
         ev_trigger_tuple = (0, self.event_trigger)
-        status = self.kpm_func.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
+        status = self.kpm_func.subscribe(gnb=self.selected_gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
 
         if status != 201:
             self.xapp_gen.logger.error("[xAppMonControlContainer] Error subscribing to gNB {}: {}".format(self.gnb.inventory_name, status))
@@ -216,7 +252,7 @@ class xAppMonControlContainer():
 def main(args):
     xapp_gen = xDevSMRMRXapp("0.0.0.0", route_file=args.route_file)
     xapp_gen.logger.set_level(string_to_level[args.log_level])
-    xapp_container = xAppMonControlContainer(xapp_gen, args.event_trigger, args.sst, args.sd, args.max_down_throughput, args.max_up_throughput)
+    xapp_container = xAppMonControlContainer(xapp_gen, args.gnb_target, args.csv_file, args.event_trigger, args.sst, args.sd, args.max_down_throughput, args.max_up_throughput)
     xapp_container.start()
 
 
@@ -226,6 +262,9 @@ if __name__ == '__main__':
     parser.add_argument("-r", "--route_file", metavar="<route_file>",
                         help="path of xApp route file",
                         type=str, default="./config/uta_rtg.rt")
+    parser.add_argument("-c", "--csv_file", metavar="<csv_file>",
+                        help="path of csv file",
+                        type=str)
     parser.add_argument("-e", "--event_trigger", metavar="<event_trigger_period>",
                         help="event trigger period in seconds",
                         type=int, default=1)
