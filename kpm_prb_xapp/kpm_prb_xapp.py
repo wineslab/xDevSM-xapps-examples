@@ -173,7 +173,6 @@ class xAppMonControlContainer():
         self.xapp_gen.logger.info("[xAppMonControlContainer] plmn identity: {}".format(plmn_id))
         self.rc_func.set_plmn_identity(plmn_id)
 
-        
         # Get kpm data
         ran_function_description = self.kpm_func.get_ran_function_description(json_ran_info=gnb_info)
         func_def_dict = ran_function_description.get_dict_of_values()
@@ -203,17 +202,15 @@ class xAppMonControlContainer():
         func_def_sub_dict[selected_format] = func_def_dict[selected_format]
         
         ev_trigger_tuple = (0, self.event_trigger)
-        status = self.kpm_func.subscribe(gnb=self.selected_gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
+        status = self.kpm_func.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
 
         if status != 201:
-            self.xapp_gen.logger.error("[xAppMonControlContainer] Error subscribing to gNB {}: {}".format(self.selected_gnb.inventory_name, status))
+            self.xapp_gen.logger.error("[xAppMonControlContainer] Error subscribing to gNB {}: {}".format(self.gnb.inventory_name, status))
             self.kpm_func.terminate(signal.SIGTERM, None)
             return
         
         # Running xApp Thread
         self.xapp_gen.run()
-
-
 
 
 def main(args):
