@@ -104,9 +104,10 @@ class DataManager():
                 meas_report_ue = ind_msg.data.frm_3.meas_report_per_ue[i]
                 # ue id
                 ue_id = self.kpm_xapp.get_ue_id(meas_report_ue.ue_meas_report_lst)
-                ue_id_str = "ue_" + str(ue_id)
-                self.df_dict["ue_id"].append(ue_id_str)
-                self.df_dict["gnb_id"].append(gnbid)
+                if self.csv_file is not None:
+                    ue_id_str = "ue_" + str(ue_id)
+                    self.df_dict["ue_id"].append(ue_id_str)
+                    self.df_dict["gnb_id"].append(gnbid)
                 logger.info("[Main]gnb: {}, sender_name: {}, ue: {}".format(gnbid, sender_name, ue_id))
                 ind_msg_format_1 = meas_report_ue.ind_msg_format_1
                 for j in range(ind_msg_format_1.meas_data_lst_len):
