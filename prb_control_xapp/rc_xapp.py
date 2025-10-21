@@ -66,7 +66,7 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="kpm xApp")
+    parser = argparse.ArgumentParser(description="prb xApp")
 
     parser.add_argument("-p", "--plmn", metavar="<plmn>",
                         help="PLMN ID", type=str, default="00F110")
