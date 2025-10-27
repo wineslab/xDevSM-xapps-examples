@@ -84,9 +84,9 @@ if __name__ == '__main__':
     parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
                         help="gNB to subscribe to",
                         type=str)
-    parser.add_argument("-m", "--mock_du_ue_id", metavar="<mock_du_ue_id>",
+    parser.add_argument("-m", "--mock_du_ue_id",
                         help="Type of UE ID to mock, defaults to get_mock_ue_id if not passed",
-                        type=bool, action="store_true")
+                        action="store_true")
     
     args = parser.parse_args()
     main(args)
