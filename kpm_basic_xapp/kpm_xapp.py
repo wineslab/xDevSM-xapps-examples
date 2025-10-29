@@ -206,7 +206,7 @@ def main(args):
     func_def_sub_dict[selected_format] = func_def_dict[selected_format]
 
     logger.debug("[Main] Selected functions: {}".format(func_def_dict[selected_format]))
-    time.sleep(5)
+    time.sleep(10)
     # Sending subscription
     ev_trigger_tuple = (0, 1000)
     status = kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=args.sst, sd=args.sd)
