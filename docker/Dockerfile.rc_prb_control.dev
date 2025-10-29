@@ -2,7 +2,7 @@ FROM python:3.8-slim as stretch
 
 RUN apt-get update && \
     apt-get install -y \
-        wget gcc musl-dev
+        wget gcc musl-dev git
 
 ARG rmr_version=4.8.0
 ARG e2ap_version=2.0
@@ -21,6 +21,14 @@ RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
 
 RUN dpkg -i riclibe2ap_${e2ap_version}_amd64.deb
 RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
+
+# Get hash commits for xApp and xDevSM
+COPY . /tmp/xDevSM-xapps-examples/
+RUN cd /tmp/xDevSM-xapps-examples/ \
+    && echo "xApp on commit hash $(git log -1 --format=%H)" > /tmp/git_commit_info.log \
+    && cd xDevSM/ \
+    && echo "xDevSM on commit hash $(git log -1 --format=%H)" >> /tmp/git_commit_info.log
+
 
 FROM python:3.8-slim
 
@@ -43,7 +51,7 @@ WORKDIR "/ws"
 
 COPY prb_control_xapp .
 COPY xDevSM ./xDevSM
-
+COPY --from=stretch /tmp/git_commit_info.log ./git_commit_info.log
 
 RUN pip install -r requirements.txt
 RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.8/site-packages/ricxappframe/e2ap/asn1.py
