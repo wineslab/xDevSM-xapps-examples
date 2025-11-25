@@ -37,7 +37,8 @@ def main(args):
                                             min_prb_policy_ratio=args.min_prb_policy_ratio,
                                             max_prb_policy_ratio=args.max_prb_policy_ratio,
                                             dedicated_prb_policy_ratio=args.dedicated_prb_policy_ratio,
-                                            mock_du_ue_id=args.mock_du_ue_id
+                                            ue_id_type=args.mock_du_ue_id,
+                                            ue_id=args.ue_id # as int so the structure is built inside the decorator
                                             )
 
     # Register the handler for the xApp
@@ -62,9 +63,8 @@ def main(args):
 
     rc_xapp.send(e2_node_id=gnb.inventory_name,
                 ran_func_dsc=ran_function_description,
-                ue_id=None,  # Use mock UE ID
+                ue_id_struct=None, # this ue id is the struct
                 control_action_id=6)  # Slice-level PRB quota
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="prb xApp")
@@ -87,6 +87,9 @@ if __name__ == '__main__':
     parser.add_argument("-m", "--mock_du_ue_id",
                         help="Type of UE ID to mock, defaults to get_mock_ue_id if not passed",
                         action="store_true")
+    parser.add_argument("-u", "--ue_id",
+                        help="UE ID to use",
+                        type=int, default=1)
     
     args = parser.parse_args()
     main(args)
