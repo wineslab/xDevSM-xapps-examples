@@ -105,7 +105,7 @@ class xAppMonControlContainer():
             self.rc_func.set_plmn_identity(self.dest_plmn_identity)
             self.rc_func.send(e2_node_id=self.selected_gnb.inventory_name,
                             ran_func_dsc=self.rc_func_desc,
-                            ue_id=meas_report_ue.ue_meas_report_lst,  
+                            ue_id_struct=meas_report_ue.ue_meas_report_lst,  
                             control_action_id=1)
             self.kpm_func.terminate(signal.SIGTERM, None)
 

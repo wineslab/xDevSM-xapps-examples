@@ -31,7 +31,9 @@ def main(args):
                                  # control parameters
                                  drb_id=args.drb_id,
                                  qos_flow_id=args.qos_flow_id,
-                                 qos_flow_mapping_indication=args.qos_flow_mapping_indication
+                                 qos_flow_mapping_indication=args.qos_flow_mapping_indication,
+                                 ue_id_type=args.mock_du_ue_id,
+                                 ue_id=args.ue_id
                                  )
 
     # Register the handler for the xApp
@@ -56,7 +58,7 @@ def main(args):
 
     rc_xapp.send(e2_node_id=gnb.inventory_name,
                 ran_func_dsc=ran_function_description,
-                ue_id=None,  # Use mock UE ID
+                ue_id_struct=None,  # Use struct
                 control_action_id=2)  # QoS flow mapping configuration
 
 
@@ -65,9 +67,9 @@ if __name__ == '__main__':
 
     parser.add_argument("-d", "--drb_id", metavar="<drb_id>",
                         help="DRB ID", type=int, default=1)
-    parser.add_argument("-q", "--qos_flow_id", metavar="<qos_flow_id>",
+    parser.add_argument("-qI", "--qos_flow_id", metavar="<qos_flow_id>",
                         help="QoS Flow ID", type=int, default=10)
-    parser.add_argument("-m", "--qos_flow_mapping_indication", metavar="<qos_flow_mapping_indication>",
+    parser.add_argument("-qF", "--qos_flow_mapping_indication", metavar="<qos_flow_mapping_indication>",
                         help="QoS Flow Mapping Indication", type=int, default=1)
     parser.add_argument("-r", "--route_file", metavar="<route_file>",
                         help="path of xApp route file",
@@ -75,6 +77,11 @@ if __name__ == '__main__':
     parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
                         help="gNB to subscribe to",
                         type=str)
-    
+    parser.add_argument("-m", "--mock_du_ue_id",
+                        help="Type of UE ID to mock, defaults to get_mock_ue_id if not passed",
+                        action="store_true")
+    parser.add_argument("-u", "--ue_id",
+                        help="UE ID to use",
+                        type=int, default=1)
     args = parser.parse_args()
     main(args)
