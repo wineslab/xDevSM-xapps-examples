@@ -48,6 +48,7 @@ class DataManager():
         
         if not csv_file is None:
             self.df_dict = {}
+            self.df_dict ["timestamp"]= []
             self.df_dict["ue_id"] = []
             self.df_dict["gnb_id"] = []
 
@@ -106,6 +107,7 @@ class DataManager():
                 ue_id = self.kpm_xapp.get_ue_id(meas_report_ue.ue_meas_report_lst)
                 if self.csv_file is not None:
                     ue_id_str = "ue_" + str(ue_id)
+                    self.df_dict["timestamp"].append(int(time.time() * 1000))
                     self.df_dict["ue_id"].append(ue_id_str)
                     self.df_dict["gnb_id"].append(gnbid)
                 logger.info("[Main]gnb: {}, sender_name: {}, ue: {}".format(gnbid, sender_name, ue_id))

@@ -2,6 +2,8 @@ import time
 import argparse
 import signal
 
+import influxdb_client
+import redis
 import setup_imports
 
 
@@ -14,6 +16,48 @@ from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAl
 
 logger = None
 
+class PRBCotrolXAppDataManager():
+    def __init__(self, rc_xapp, time_stamp_file_name, influx_end_point, organization, token, bucket, redis_end_point):
+        self.rc_xapp = rc_xapp
+        self.time_stamp_file_name = time_stamp_file_name
+        self.influx_end_point = influx_end_point
+        self.organization = organization
+        self.token = token
+        self.bucket = bucket
+        self.redis_end_point = redis_end_point
+        self.influx_client = None
+        self.redis_client = None
+        self.rc_xapp.register_rc_control_ack_suc_callback(self.handle_control_ack)
+        self._setup_influxdb_client()
+        self._setup_redis_client()
+    
+    def _setup_influxdb_client(self):
+        if self.influx_end_point:
+            self.influx_client = influxdb_client.InfluxDBClient(
+                url=self.influx_end_point,
+                token=self.token,
+                org=self.organization
+            )
+            logger.info("[PRBCotrolXAppDataManager] InfluxDB client set up successfully.")
+        else:
+            logger.warning("[PRBCotrolXAppDataManager] InfluxDB endpoint not provided. Skipping InfluxDB client setup.")
+    
+    def _setup_redis_client(self):
+        if self.redis_end_point:
+            host, port = self.redis_end_point.split(":")
+            self.redis_client = redis.Redis(host=host, port=int(port))
+            logger.info("[PRBCotrolXAppDataManager] Redis client set up successfully.")
+        else:
+            logger.warning("[PRBCotrolXAppDataManager] Redis endpoint not provided. Skipping Redis client setup.")
+
+    def handle_control_ack(self):
+        global logger
+        logger.info("[PRBCotrolXAppDataManager] Control Ack received!")
+        if self.time_stamp_file_name:
+            with open(self.time_stamp_file_name, "a") as f:
+                timestamp_ms = int(time.time() * 1000)
+                f.write(f"{timestamp_ms} - ACK - [PRBCotrolXAppDataManager] Control Ack received!\n")
+        self.rc_xapp.terminate(signal.SIGTERM, None)
 
 def main(args):
     global logger
@@ -44,6 +88,11 @@ def main(args):
     # Register the handler for the xApp
     xapp_gen.register_handler(rc_xapp.handle)
 
+    prb_data_manager = PRBCotrolXAppDataManager(rc_xapp, args.time_stamp, args.influx_end_point, args.organization, args.token, args.bucket, args.redis_end_point)
+    
+    # Register control ack handler
+    rc_xapp.register_rc_control_ack_suc_callback(prb_data_manager.handle_control_ack)
+
     # Registering termination signal handlers
     signal.signal(signal.SIGINT, rc_xapp.terminate)
     signal.signal(signal.SIGTERM, rc_xapp.terminate)
@@ -61,6 +110,11 @@ def main(args):
     ran_function_description = rc_xapp.get_ran_function_description(json_ran_info=gnb_info)
     ran_function_description.print_rc_functions()
 
+
+    logger.info("[Main] Sending RC Control Request to gNB: {}".format(gnb.inventory_name))
+    with open(args.time_stamp, "a") as f:
+                timestamp_ms = int(time.time() * 1000)
+                f.write(f"{timestamp_ms} - SEND - [Main] Send Control Request\n")
     rc_xapp.send(e2_node_id=gnb.inventory_name,
                 ran_func_dsc=ran_function_description,
                 ue_id_struct=None, # this ue id is the struct
@@ -82,13 +136,34 @@ if __name__ == '__main__':
     parser.add_argument("-y", "--dedicated_prb_policy_ratio", metavar="<dedicated_prb_policy_ratio>",
                         help="Dedicated PRB Policy Ratio", type=int, default=5)
     parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
-                        help="gNB to subscribe to",
+                        help="gNB where to send the control request",
                         type=str)
+    # interaction with a KPM xApp
+    parser.add_argument("--influx_end_point", metavar="http://<ip>:port",
+                        help="influx db endpoint", type=str, default=None)
+    
+    parser.add_argument("--organization", metavar="<organization>",
+                        help="influx db organization", type=str, default="docs")
+    
+    parser.add_argument("--token", metavar="<token>",
+                        help="influx db token", type=str, default="mytoken0==")
+    
+    parser.add_argument("--bucket", metavar="<bucket>",
+                        help="influx db bucket", type=str, default="xapp_bucket")
+
+    parser.add_argument("--redis_end_point", metavar="<host:port>",
+                        help="Redis endpoint", type=str, default=None)
+    
+    parser.add_argument("-t", "--time_stamp", metavar="<time_stamp_file>",
+                        help="Records time stamp of control message sent and control ack received in .txt file",
+                        type=str, default=None)
+    # change type of gnb ue id to mock
     parser.add_argument("-m", "--mock_du_ue_id",
-                        help="Type of UE ID to mock, defaults to get_mock_ue_id if not passed",
+                        help="Type of ue id to mock, defaults to get_mock_ue_id if not passed",
                         action="store_true")
-    parser.add_argument("-u", "--ue_id",
-                        help="UE ID to use",
+    # ue id
+    parser.add_argument("-u", "--ue_id", metavar="<ue_id>",
+                        help="ue id to use when db not available",
                         type=int, default=1)
     
     args = parser.parse_args()
