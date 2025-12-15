@@ -17,7 +17,7 @@ from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAl
 logger = None
 
 class PRBCotrolXAppDataManager():
-    def __init__(self, rc_xapp, time_stamp_file_name, influx_end_point, organization, token, bucket, redis_end_point):
+    def __init__(self, rc_xapp, time_stamp_file_name, influx_end_point, organization, token, bucket, redis_end_point, query_range):
         self.rc_xapp = rc_xapp
         self.time_stamp_file_name = time_stamp_file_name
         self.influx_end_point = influx_end_point
@@ -27,6 +27,8 @@ class PRBCotrolXAppDataManager():
         self.redis_end_point = redis_end_point
         self.influx_client = None
         self.redis_client = None
+        self.query_range = query_range
+        self.query_api_influx = None
         self.rc_xapp.register_rc_control_ack_suc_callback(self.handle_control_ack)
         self._setup_influxdb_client()
         self._setup_redis_client()
@@ -39,6 +41,7 @@ class PRBCotrolXAppDataManager():
                 org=self.organization
             )
             logger.info("[PRBCotrolXAppDataManager] InfluxDB client set up successfully.")
+            self.query_api_influx = self.influx_client.query_api_influx()
         else:
             logger.warning("[PRBCotrolXAppDataManager] InfluxDB endpoint not provided. Skipping InfluxDB client setup.")
     
@@ -58,6 +61,78 @@ class PRBCotrolXAppDataManager():
                 timestamp_ms = int(time.time() * 1000)
                 f.write(f"{timestamp_ms} - ACK - [PRBCotrolXAppDataManager] Control Ack received!\n")
         self.rc_xapp.terminate(signal.SIGTERM, None)
+    
+    def read_data_from_influx(self):
+        if not self.influx_client:
+            logger.error("[PRBCotrolXAppDataManager] InfluxDB client is not set up.")
+            return None
+        query = 'from(bucket:"{}") |> range(start: {})'.format(self.bucket, self.query_range)
+        result = self.query_api_influx.query(org=self.organization, query=query)
+        return result
+
+    def get_all_gnbs(self):
+        """Get all unique gNB IDs from the database"""
+        query = '''
+        from(bucket: "{}")
+            |> range(start: {})
+            |> filter(fn: (r) => r._measurement == "xapp-stats")
+            |> keep(columns: ["gnb_id"])
+            |> distinct(column: "gnb_id")
+        '''
+        if self.query_api_influx is None:
+            logger.error("[PRBCotrolXAppDataManager] InfluxDB client is not set up.")
+            return []
+        result = self.query_api_influx.query(query.format(self.bucket, self.query_range))
+        gnb_ids = []
+        
+        for table in result:
+            for record in table.records:
+                gnb_ids.append(record.values.get("gnb_id"))
+        
+        return sorted(set(gnb_ids))
+    
+    def get_all_ues(self):
+        """Get all unique UE IDs from the database"""
+        query = '''
+        from(bucket: "{}")
+            |> range(start: {})
+            |> filter(fn: (r) => r._measurement == "xapp-stats")
+            |> keep(columns: ["ue_id"])
+            |> distinct(column: "ue_id")
+        '''
+        if self.query_api_influx is None:
+            logger.error("[PRBCotrolXAppDataManager] InfluxDB client is not set up.")
+            return []
+        result = self.query_api_influx.query(query.format(self.bucket, self.query_range))
+        ue_ids = []
+        
+        for table in result:
+            for record in table.records:
+                ue_ids.append(record.values.get("ue_id"))
+        
+        return sorted(set(ue_ids))
+
+    def get_ues_by_gnb(self, gnb_id):
+        """Get all UE IDs associated with a specific gNB"""
+        query = '''
+        from(bucket: "{}")
+            |> range(start: {})
+            |> filter(fn: (r) => r._measurement == "xapp-stats")
+            |> filter(fn: (r) => r.gnb_id == "{}")
+            |> keep(columns: ["ue_id"])
+            |> distinct(column: "ue_id")
+        '''
+        if self.query_api_influx is None:
+            logger.error("[PRBCotrolXAppDataManager] InfluxDB client is not set up.")
+            return []
+        result = self.query_api_influx.query(query.format(self.bucket, self.query_range, gnb_id))
+        ue_ids = []
+        
+        for table in result:
+            for record in table.records:
+                ue_ids.append(record.values.get("ue_id"))
+        
+        return sorted(set(ue_ids))
 
 def main(args):
     global logger
@@ -88,7 +163,7 @@ def main(args):
     # Register the handler for the xApp
     xapp_gen.register_handler(rc_xapp.handle)
 
-    prb_data_manager = PRBCotrolXAppDataManager(rc_xapp, args.time_stamp, args.influx_end_point, args.organization, args.token, args.bucket, args.redis_end_point)
+    prb_data_manager = PRBCotrolXAppDataManager(rc_xapp, args.time_stamp, args.influx_end_point, args.organization, args.token, args.bucket, args.redis_end_point, args.query_range)
     
     # Register control ack handler
     rc_xapp.register_rc_control_ack_suc_callback(prb_data_manager.handle_control_ack)
@@ -99,7 +174,15 @@ def main(args):
 
     # Start the xApp
     xapp_gen.run(thread=True)
-    time.sleep(10)  # waiting for registrations
+
+    # testing
+    # print(prb_data_manager.read_data_from_influx())
+    # print(prb_data_manager.get_all_gnbs())
+    # print(prb_data_manager.get_all_ues())
+    # print(prb_data_manager.get_ues_by_gnb("gnb_001_001_00000e00"))
+    # print(prb_data_manager.get_ues_by_gnb("gnb_001_007_00000e00"))
+
+    # time.sleep(10)  # waiting for registrations
 
     gnb, gnb_info = xapp_gen.get_selected_e2node_info(args.gnb_target)
     if not gnb:
@@ -154,6 +237,11 @@ if __name__ == '__main__':
     parser.add_argument("--redis_end_point", metavar="<host:port>",
                         help="Redis endpoint", type=str, default=None)
     
+    # TODO - check if this could be used also for redis
+    parser.add_argument("--query_range", metavar="<query_range>",
+                        help="Range for InfluxDB queries, e.g., -30d for last 30 days", type=str, default="-30d")
+    
+    # Debugging and testing
     parser.add_argument("-t", "--time_stamp", metavar="<time_stamp_file>",
                         help="Records time stamp of control message sent and control ack received in .txt file",
                         type=str, default=None)
