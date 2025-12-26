@@ -138,8 +138,7 @@ class xAppMonControlContainer():
                     # Sending SLICE-LEVEL PRB Quota
                 else:
                     self.xapp_gen.logger.error("[xAppMonControlContainer] Max PRB Policy Ratio is not greater than 20!")
-                
-                self.rc_func.send(e2_node_id=self.selected_gnb.inventory_name,ran_func_dsc=self.rc_func_desc,ue_id=meas_report_ue.ue_meas_report_lst,control_action_id=6)
+                self.rc_func.send(e2_node_id=self.selected_gnb.inventory_name,ran_func_dsc=self.rc_func_desc,ue_id_struct=meas_report_ue.ue_meas_report_lst,control_action_id=6)
 
     def sub_failed_callback(self, json_data):
         self.xapp_gen.logger.info("[xAppMonControlContainer] subscription failed: {}".format(json_data))

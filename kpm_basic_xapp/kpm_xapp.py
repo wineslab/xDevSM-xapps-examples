@@ -60,6 +60,7 @@ class DataManager():
         
         if csv_file:
             self.df_dict = {}
+            self.df_dict ["timestamp"]= []
             self.df_dict["ue_id"] = []
             self.df_dict["gnb_id"] = []
 
@@ -137,9 +138,11 @@ class DataManager():
                 meas_report_ue = ind_msg.data.frm_3.meas_report_per_ue[i]
                 # ue id
                 ue_id = self.kpm_xapp.get_ue_id(meas_report_ue.ue_meas_report_lst)
-                ue_id_str = "ue_" + str(ue_id)
-                self.df_dict["ue_id"].append(ue_id_str)
-                self.df_dict["gnb_id"].append(gnbid)
+                if self.csv_file is not None:
+                    ue_id_str = "ue_" + str(ue_id)
+                    self.df_dict["timestamp"].append(int(time.time() * 1000))
+                    self.df_dict["ue_id"].append(ue_id_str)
+                    self.df_dict["gnb_id"].append(gnbid)
                 logger.info("[Main]gnb: {}, sender_name: {}, ue: {}".format(gnbid, sender_name, ue_id))
                 ind_msg_format_1 = meas_report_ue.ind_msg_format_1
                 for j in range(ind_msg_format_1.meas_data_lst_len):
@@ -241,7 +244,7 @@ def main(args):
     func_def_sub_dict[selected_format] = func_def_dict[selected_format]
 
     logger.debug("[Main] Selected functions: {}".format(func_def_dict[selected_format]))
-    time.sleep(5)
+    time.sleep(10)
     # Sending subscription
     ev_trigger_tuple = (0, 1000)
     status = kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=args.sst, sd=args.sd)
