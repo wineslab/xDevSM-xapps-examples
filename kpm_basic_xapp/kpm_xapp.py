@@ -29,7 +29,7 @@ class DataManager():
     """
     This class manages data storage in InfluxDB, Redis, and CSV.
     """
-    def __init__(self, kpm_xapp, organization, token, bucket, influxdb_end_point=None, redis_end_point=None, csv_file=None):
+    def __init__(self, kpm_xapp, organization, token, bucket, influxdb_end_point=None, redis_end_point=None, redis_pwd=None, csv_file=None):
         self.kpm_xapp = kpm_xapp
         self.organization = organization
         self.client_influx = None
@@ -52,7 +52,10 @@ class DataManager():
         if redis_end_point:
             try:
                 host, port = redis_end_point.split(':')
-                self.client_redis = redis.Redis(host=host, port=int(port), decode_responses=False)
+                self.client_redis = redis.Redis(host=host, 
+                                                port=int(port), 
+                                                password=redis_pwd,
+                                                decode_responses=False)
                 self.client_redis.ping()
             except Exception as e:
                 logger.warning(f"Failed to connect to Redis at {redis_end_point}: {e}")
@@ -196,7 +199,7 @@ def main(args):
     
     # Creating a DataManager instance
     data_manager = DataManager(kpm_xapp=kpm_xapp, organization=args.organization, token=args.token, bucket=args.bucket,
-                               influxdb_end_point=args.influx_end_point, redis_end_point=args.redis_end_point, csv_file=args.csv_file)
+                               influxdb_end_point=args.influx_end_point, redis_end_point=args.redis_end_point, redis_pwd=args.redis_pwd, csv_file=args.csv_file)
     
     # Registering the DataManager shutdown function to clean data resources
     xapp_gen.register_shutdown(data_manager.shutdown)
@@ -283,6 +286,9 @@ if __name__ == '__main__':
 
     parser.add_argument("--redis_end_point", metavar="<host:port>",
                         help="Redis endpoint", type=str, default=None)
+    
+    parser.add_argument("--redis_pwd", metavar="<redis_pwd>",
+                        help="Redis password", type=str, default=None)
 
     parser.add_argument("-r", "--route_file", metavar="<route_file>",
                         help="path of xApp route file",
