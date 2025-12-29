@@ -178,6 +178,8 @@ class DataManager():
         if self.df_dict is not None:
             self.df = pd.DataFrame.from_dict(self.df_dict, orient='index').transpose()
             self.df.to_csv(self.csv_file, index=False)
+        if not self.client_redis is None:
+            self.client_redis.close()
 
 
 def sub_failed_callback(json_data):
