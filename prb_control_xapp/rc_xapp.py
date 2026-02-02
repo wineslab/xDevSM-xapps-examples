@@ -195,9 +195,12 @@ def main(args):
 
 
     logger.info("[Main] Sending RC Control Request to gNB: {}".format(gnb.inventory_name))
-    with open(args.time_stamp, "a") as f:
-                timestamp_ms = int(time.time() * 1000)
-                f.write(f"{timestamp_ms} - SEND - [Main] Send Control Request\n")
+    
+    if args.time_stamp:
+        with open(args.time_stamp, "a") as f:
+            timestamp_ms = int(time.time() * 1000)
+            f.write(f"{timestamp_ms} - SEND - [Main] Send Control Request\n")
+    
     rc_xapp.send(e2_node_id=gnb.inventory_name,
                 ran_func_dsc=ran_function_description,
                 ue_id_struct=None, # this ue id is the struct
