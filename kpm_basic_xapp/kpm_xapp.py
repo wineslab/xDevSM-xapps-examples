@@ -57,6 +57,7 @@ class DataManager():
                                                 password=redis_pwd,
                                                 decode_responses=False)
                 self.client_redis.ping()
+                logger.info("[DataManager] connected to redis!")
             except Exception as e:
                 logger.warning(f"Failed to connect to Redis at {redis_end_point}: {e}")
                 self.client_redis = None
@@ -167,18 +168,20 @@ class DataManager():
         else:
             logger.info("[Main] format not supported for storing")
         
-        if self.client_influx is None and self.csv_file is None:
+        if self.client_influx is None and self.client_redis is None and self.csv_file is None:
             logger.info("[Main]indication message not stored")
             ind_msg.print_meas_info(logger)
     
     def shutdown(self):
         logger.info("[Main] Shutting down DataManager")
         if not self.client_influx is None:
+            logger.info("[Main] closing influx connection")
             self.client_influx.close()
         if self.df_dict is not None:
             self.df = pd.DataFrame.from_dict(self.df_dict, orient='index').transpose()
             self.df.to_csv(self.csv_file, index=False)
         if not self.client_redis is None:
+            logger.info("[Main] closing redis connection")
             self.client_redis.close()
 
 
