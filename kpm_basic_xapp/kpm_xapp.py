@@ -2,6 +2,7 @@ import time
 import signal
 import argparse
 import influxdb_client
+import redis
 import numpy as np
 import pandas as pd
 from influxdb_client.client.write_api import SYNCHRONOUS
@@ -26,19 +27,21 @@ logger = None
 
 class DataManager():
     """
-    This class manages data storage in InfluxDB and CSV.
+    This class manages data storage in InfluxDB, Redis, and CSV.
     """
-    def __init__(self, kpm_xapp, organization, token, bucket, influxdb_end_point=None, csv_file=None):
+    def __init__(self, kpm_xapp, organization, token, bucket, influxdb_end_point=None, redis_end_point=None, redis_pwd=None, csv_file=None):
         self.kpm_xapp = kpm_xapp
         self.organization = organization
         self.client_influx = None
         self.write_api = None
+        self.client_redis = None
         self.bucket = bucket
         self.org = organization
         self.df = None
         self.df_dict = {}
         self.csv_file = csv_file
-        if not influxdb_end_point is None:
+        
+        if influxdb_end_point:
             self.client_influx = influxdb_client.InfluxDBClient(
                     url=influxdb_end_point,
                     token=token,
@@ -46,7 +49,20 @@ class DataManager():
             )
             self.write_api = self.client_influx.write_api(write_options=SYNCHRONOUS)
         
-        if not csv_file is None:
+        if redis_end_point:
+            try:
+                host, port = redis_end_point.split(':')
+                self.client_redis = redis.Redis(host=host, 
+                                                port=int(port), 
+                                                password=redis_pwd,
+                                                decode_responses=False)
+                self.client_redis.ping()
+                logger.info("[DataManager] connected to redis!")
+            except Exception as e:
+                logger.warning(f"Failed to connect to Redis at {redis_end_point}: {e}")
+                self.client_redis = None
+        
+        if csv_file:
             self.df_dict = {}
             self.df_dict ["timestamp"]= []
             self.df_dict["ue_id"] = []
@@ -67,6 +83,27 @@ class DataManager():
         
         # storing on influxdb
         self.write_api.write(bucket=self.bucket, org=self.org, record=p)
+
+    def store_on_redis(self, gnb_id, ue_id, meas_type, meas_record):
+        """Store measurement in Redis hash"""
+        try:
+            ue_id_str = "ue_" + str(ue_id)
+            key = f"xapp:metrics:{gnb_id}:{ue_id_str}"
+            
+            meas_type_bs = bytes(np.ctypeslib.as_array(meas_type.buf, shape=(meas_type.len,)))
+            meas_type_str = meas_type_bs.decode('utf-8')
+            
+            if meas_record.value.value == meas_value_e.INTEGER_MEAS_VALUE:
+                value = str(meas_record.union.int_val)
+            elif meas_record.value.value == meas_value_e.REAL_MEAS_VALUE:
+                value = str(meas_record.union.real_val)
+            else:
+                return
+            
+            self.client_redis.hset(key, meas_type_str, value)
+            self.client_redis.expire(key, 300)  # 5 min expiry
+        except Exception as e:
+            logger.warning(f"Failed to store on Redis: {e}")
 
     def store_to_csv(self,gnb_id, ue_id, meas_type, meas_record):
         ue_id = "ue_" + str(ue_id)
@@ -120,6 +157,9 @@ class DataManager():
                             if not self.client_influx is None:
                                 self.store_on_influx(gnb_id=gnbid, ue_id=ue_id, meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
                                                     meas_record=meas_record_lst_el)
+                            if not self.client_redis is None:
+                                self.store_on_redis(gnb_id=gnbid, ue_id=ue_id, meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
+                                                   meas_record=meas_record_lst_el)
                             if not self.csv_file is None:
                                 self.store_to_csv(gnb_id=gnbid, ue_id=ue_id, meas_type=ind_msg_format_1.meas_info_lst[k].meas_type.value.name,
                                                 meas_record=meas_record_lst_el)
@@ -128,17 +168,21 @@ class DataManager():
         else:
             logger.info("[Main] format not supported for storing")
         
-        if self.client_influx is None and self.csv_file is None:
+        if self.client_influx is None and self.client_redis is None and self.csv_file is None:
             logger.info("[Main]indication message not stored")
             ind_msg.print_meas_info(logger)
     
     def shutdown(self):
         logger.info("[Main] Shutting down DataManager")
         if not self.client_influx is None:
+            logger.info("[Main] closing influx connection")
             self.client_influx.close()
         if self.df_dict is not None:
             self.df = pd.DataFrame.from_dict(self.df_dict, orient='index').transpose()
             self.df.to_csv(self.csv_file, index=False)
+        if not self.client_redis is None:
+            logger.info("[Main] closing redis connection")
+            self.client_redis.close()
 
 
 def sub_failed_callback(json_data):
@@ -160,7 +204,7 @@ def main(args):
     
     # Creating a DataManager instance
     data_manager = DataManager(kpm_xapp=kpm_xapp, organization=args.organization, token=args.token, bucket=args.bucket,
-                               influxdb_end_point=args.influx_end_point, csv_file=args.csv_file)
+                               influxdb_end_point=args.influx_end_point, redis_end_point=args.redis_end_point, redis_pwd=args.redis_pwd, csv_file=args.csv_file)
     
     # Registering the DataManager shutdown function to clean data resources
     xapp_gen.register_shutdown(data_manager.shutdown)
@@ -244,6 +288,12 @@ if __name__ == '__main__':
     
     parser.add_argument("-b", "--bucket", metavar="<bucket>",
                         help="influx db bucket", type=str, default="xapp_bucket")
+
+    parser.add_argument("--redis_end_point", metavar="<host:port>",
+                        help="Redis endpoint", type=str, default=None)
+    
+    parser.add_argument("--redis_pwd", metavar="<redis_pwd>",
+                        help="Redis password", type=str, default=None)
 
     parser.add_argument("-r", "--route_file", metavar="<route_file>",
                         help="path of xApp route file",

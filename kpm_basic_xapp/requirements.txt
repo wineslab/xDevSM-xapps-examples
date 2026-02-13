@@ -4,3 +4,4 @@ mdclogpy==1.1.4
 numpy==1.24.4
 influxdb-client==1.47.0 
 pandas
+redis
