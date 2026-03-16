@@ -1,32 +1,17 @@
 {
     "name": "kpm-basic-xapp",
-    "version": "1.0.0",
+    "version": "0.2.0-dev",
+    "APP_NAMESPACE": "ricxapp",
     "containers": [
         {
             "name": "kpm-basic-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/kpm-basic-xapp",
-                "tag": "1.0.0"
+                "tag": "0.2.0-dev"
             }
         }
     ],
-    "livenessProbe": {
-        "httpGet": {
-            "path": "ric/v1/health/alive",
-            "port": 8080
-        },
-        "initialDelaySeconds": 5,
-        "periodSeconds": 15
-    },
-    "readinessProbe": {
-        "httpGet": {
-            "path": "ric/v1/health/ready",
-            "port": 8080
-        },
-        "initialDelaySeconds": 5,
-        "periodSeconds": 15
-    },
     "messaging": {
         "ports": [
             {

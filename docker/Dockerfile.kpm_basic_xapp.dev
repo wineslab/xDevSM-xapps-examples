@@ -2,9 +2,9 @@ FROM python:3.8-slim as stretch
 
 RUN apt-get update && \
     apt-get install -y \
-        wget gcc musl-dev
+        wget gcc musl-dev git
 
-ARG rmr_version=4.8.0
+ARG rmr_version=4.9.4
 ARG e2ap_version=2.0
 
 # Note: O-RAN-SC only publishes packages for Debian stretch, but stretch does not get official Rust 1.63 updates.
@@ -22,9 +22,17 @@ RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
 RUN dpkg -i riclibe2ap_${e2ap_version}_amd64.deb
 RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
 
+# Get hash commits for xApp and xDevSM
+COPY . /tmp/xDevSM-xapps-examples/
+RUN cd /tmp/xDevSM-xapps-examples/ \
+    && echo "xApp on commit hash $(git log -1 --format=%H)" > /tmp/git_commit_info.log \
+    && cd xDevSM/ \
+    && echo "xDevSM on commit hash $(git log -1 --format=%H)" >> /tmp/git_commit_info.log
+
+
 FROM python:3.8-slim
 
-ARG rmr_version=4.8.0
+ARG rmr_version=4.9.4
 # ARG e2ap_version=1.1.0
 
 COPY --from=stretch /usr/local/lib/librmr_si.so.${rmr_version} /usr/local/lib/librmr_si.so
@@ -43,7 +51,7 @@ WORKDIR "/ws"
 
 COPY kpm_basic_xapp .
 COPY xDevSM ./xDevSM
-
+COPY --from=stretch /tmp/git_commit_info.log ./git_commit_info.log
 
 # COPY ./sm_py_framework/lib/*.so /usr/local/lib/
 
@@ -53,6 +61,7 @@ RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/'
 
 ENV CONFIG_FILE=/ws/config/config-file.json
 ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
+ENV PLT_NAMESPACE="ricplt"
 
 # This is used to supply a static route table which can be used for debugging, 
 # testing, or if no route table generator process is being used to supply the route table. 

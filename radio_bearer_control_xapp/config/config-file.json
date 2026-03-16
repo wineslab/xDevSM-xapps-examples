@@ -1,0 +1,46 @@
+{
+    "name": "radio-bearer-control-xapp",
+    "version": "0.2.0-dev",
+    "containers": [
+        {
+            "name": "radio-bearer-control-xapp",
+            "image": {
+                "registry": "docker.io",
+                "name": "angeloferaudo/radio-bearer-control-xapp",
+                "tag": "0.2.0-dev"
+            }
+        }
+    ],
+    "messaging": {
+        "ports": [
+            {
+                "name": "http",
+                "container": "radio-bearer-control-xapp",
+                "port": 8080,
+                "description": "http service"
+            },
+            {
+                "name": "rmrroute",
+                "container": "radio-bearer-control-xapp",
+                "port": 4561,
+                "description": "rc route port"
+            },
+            {
+                "name": "rmrdata",
+                "container": "radio-bearer-control-xapp",
+                "port": 4560,
+                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE"],
+                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "RIC_CONTROL_REQ"],
+                "policies": [1],
+                "description": "rmr data port for rc-xapp"
+            }
+        ]
+    },
+    "controls": {
+        "subscription": {
+          "url": "http://service-ricxapp-radio-bearer-control-xapp-http:8080/",
+          "clientEndpoint": "service-ricxapp-radio-bearer-control-xapp-http"
+        }
+      }
+
+}

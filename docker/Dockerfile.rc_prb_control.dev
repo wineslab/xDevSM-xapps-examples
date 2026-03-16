@@ -2,7 +2,7 @@ FROM python:3.8-slim as stretch
 
 RUN apt-get update && \
     apt-get install -y \
-        wget gcc musl-dev
+        wget gcc musl-dev git
 
 ARG rmr_version=4.8.0
 ARG e2ap_version=2.0
@@ -13,14 +13,22 @@ RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/pack
 RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr-dev_${rmr_version}_amd64.deb/download.deb
 
 # Custom e2ap
-RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap_${e2ap_version}_amd64.deb
-RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap-dev_${e2ap_version}_amd64.deb
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/dev/riclibe2ap_${e2ap_version}_amd64.deb
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/dev/riclibe2ap-dev_${e2ap_version}_amd64.deb
 
 RUN dpkg -i rmr_${rmr_version}_amd64.deb
 RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
 
 RUN dpkg -i riclibe2ap_${e2ap_version}_amd64.deb
 RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
+
+# Get hash commits for xApp and xDevSM
+COPY . /tmp/xDevSM-xapps-examples/
+RUN cd /tmp/xDevSM-xapps-examples/ \
+    && echo "xApp on commit hash $(git log -1 --format=%H)" > /tmp/git_commit_info.log \
+    && cd xDevSM/ \
+    && echo "xDevSM on commit hash $(git log -1 --format=%H)" >> /tmp/git_commit_info.log
+
 
 FROM python:3.8-slim
 
@@ -41,11 +49,9 @@ RUN mkdir -p /ws
 RUN chmod -R 755 /ws
 WORKDIR "/ws" 
 
-COPY rc_basic_xapp .
+COPY prb_control_xapp .
 COPY xDevSM ./xDevSM
-
-
-# COPY ./sm_py_framework/lib/*.so /usr/local/lib/
+COPY --from=stretch /tmp/git_commit_info.log ./git_commit_info.log
 
 RUN pip install -r requirements.txt
 RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.8/site-packages/ricxappframe/e2ap/asn1.py
@@ -61,8 +67,6 @@ ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
 # and the MEID map (between meid_map start and end records).
 ENV RMR_SEED_RT ./config/uta_rtg.rt
 
-# Automatic start
-# CMD ["python", "kpm_xapp.py"]
 
 # Manual start
 ENTRYPOINT ["sleep", "infinity"]
