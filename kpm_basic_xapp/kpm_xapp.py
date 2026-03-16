@@ -200,7 +200,13 @@ def main(args):
 
     
     # Adding kpm functionalities to the xapp
-    kpm_xapp = XappKpmFrame(xapp_gen, logger, xapp_gen.server, xapp_gen.get_xapp_name(), xapp_gen.rmr_port, xapp_gen.http_port,xapp_gen.get_pltnamespace(), xapp_gen.get_app_namespace())
+    kpm_xapp = XappKpmFrame(xapp_gen, 
+                            logger, 
+                            xapp_gen.server, 
+                            xapp_gen.get_xapp_name(), 
+                            xapp_gen.rmr_port, 
+                            xapp_gen.http_port,xapp_gen.get_pltnamespace(), 
+                            xapp_gen.get_app_namespace())
     
     # Creating a DataManager instance
     data_manager = DataManager(kpm_xapp=kpm_xapp, organization=args.organization, token=args.token, bucket=args.bucket,
