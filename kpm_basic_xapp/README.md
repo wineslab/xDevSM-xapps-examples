@@ -18,6 +18,10 @@ This xApp can store KPM data in CSV files and InfluxDB. It subscribes to a singl
                         influx db token
   -b <bucket>, --bucket <bucket>
                         influx db bucket
+  --redis_end_point <host:port>
+                        Redis endpoint
+  --redis_pwd <redis_pwd>
+                        Redis password
   -r <route_file>, --route_file <route_file>
                         path of xApp route file
   -c <csv_file>, --csv_file <csv_file>
