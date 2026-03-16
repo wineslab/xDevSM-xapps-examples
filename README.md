@@ -87,6 +87,6 @@ Make sure to include:
 This project is licensed under Apache License Version 2.0 - see [License File](LICENSE) for more details.
 
 ## Organizations
-| <img src="https://github.com/wineslab.png?s=100" width="60" height="60"> | [**Wireless Networks and Embedded Systems Lab**](https://github.com/wineslab) | [website](https://ece.northeastern.edu/wineslab/index.php) |
+| <img src="https://github.com/wineslab.png?s=100" width="60" height="60"> | [**Wireless Networks and Embedded Systems Lab**](https://github.com/wineslab) | [website](https://wineslab.github.io/) |
 | :--: | :--: | :--|
 | <img src="https://github.com/MMw-Unibo.png?s=100" width="60" height="60"> | [**Mobile Middleware Research Group**](https://github.com/MMw-Unibo) | [website]( https://site.unibo.it/middleware/en) |
