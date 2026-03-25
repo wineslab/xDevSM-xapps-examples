@@ -1,13 +1,14 @@
 {
     "name": "ho-control-xapp",
-    "version": "0.2.0-dev",
+    "version": "0.3.0-dev",
+    "APP_NAMESPACE": "ricxapp-j",
     "containers": [
         {
             "name": "ho-control-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/ho-control-xapp",
-                "tag": "0.2.0-dev"
+                "tag": "0.3.0-dev"
             }
         }
     ],

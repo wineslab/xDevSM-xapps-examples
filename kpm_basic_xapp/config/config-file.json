@@ -1,14 +1,14 @@
 {
     "name": "kpm-basic-xapp",
-    "version": "0.2.0-dev",
-    "APP_NAMESPACE": "ricxapp",
+    "version": "0.3.0-dev",
+    "APP_NAMESPACE": "ricxapp-j",
     "containers": [
         {
             "name": "kpm-basic-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/kpm-basic-xapp",
-                "tag": "0.2.0-dev"
+                "tag": "0.3.0-dev"
             }
         }
     ],
@@ -43,8 +43,8 @@
     },
     "controls": {
         "subscription": {
-          "url": "http://service-ricxapp-kpm-basic-xapp-http:8080/",
-          "clientEndpoint": "service-ricxapp-kpm-basic-xapp-http"
+          "url": "http://service-ricxapp-j-kpm-basic-xapp-http:8080/",
+          "clientEndpoint": "service-ricxapp-j-kpm-basic-xapp-http"
         }
       }
 

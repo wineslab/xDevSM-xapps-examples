@@ -29,7 +29,7 @@ class PRBCotrolXAppDataManager():
         self.redis_client = None
         self.query_range = query_range
         self.query_api_influx = None
-        self.rc_xapp.register_rc_control_ack_suc_callback(self.handle_control_ack)
+        self.rc_xapp.register_control_ack_suc_callback(self.handle_control_ack)
         self._setup_influxdb_client()
         self._setup_redis_client()
     
@@ -145,8 +145,8 @@ def main(args):
                                             server=xapp_gen.server,
                                             xapp_name=xapp_gen.get_xapp_name(),
                                             rmr_port=xapp_gen.rmr_port,
-                                            mrc=xapp_gen._mrc,
                                             http_port=xapp_gen.http_port,
+                                            mrc=xapp_gen._mrc,
                                             pltnamespace=xapp_gen.get_pltnamespace(),
                                             app_namespace=xapp_gen.get_app_namespace(),
                                             # control parameters
@@ -166,7 +166,7 @@ def main(args):
     prb_data_manager = PRBCotrolXAppDataManager(rc_xapp, args.time_stamp, args.influx_end_point, args.organization, args.token, args.bucket, args.redis_end_point, args.query_range)
     
     # Register control ack handler
-    rc_xapp.register_rc_control_ack_suc_callback(prb_data_manager.handle_control_ack)
+    rc_xapp.register_control_ack_suc_callback(prb_data_manager.handle_control_ack)
 
     # Registering termination signal handlers
     signal.signal(signal.SIGINT, rc_xapp.terminate)
@@ -175,14 +175,7 @@ def main(args):
     # Start the xApp
     xapp_gen.run(thread=True)
 
-    # testing
-    # print(prb_data_manager.read_data_from_influx())
-    # print(prb_data_manager.get_all_gnbs())
-    # print(prb_data_manager.get_all_ues())
-    # print(prb_data_manager.get_ues_by_gnb("gnb_001_001_00000e00"))
-    # print(prb_data_manager.get_ues_by_gnb("gnb_001_007_00000e00"))
-
-    # time.sleep(10)  # waiting for registrations
+    time.sleep(10)  # waiting for registrations
 
     gnb, gnb_info = xapp_gen.get_selected_e2node_info(args.gnb_target)
     if not gnb:

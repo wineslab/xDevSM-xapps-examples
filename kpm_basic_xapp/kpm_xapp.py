@@ -189,8 +189,6 @@ def sub_failed_callback(json_data):
     logger.info("[Main]subscription failed: {}".format(json_data))
 
 
-
-
 def main(args):
     global logger
         
@@ -261,11 +259,7 @@ def main(args):
     time.sleep(10)
     # Sending subscription
     ev_trigger_tuple = (0, 1000)
-    status = kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=args.sst, sd=args.sd)
-
-    if status != 201:
-        logger.error("[Main] something during subscription went wrong - status: {}".format(status))
-        return
+    kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=args.sst, sd=args.sd)
 
     # Start running after finishing subscription requests
 

@@ -44,8 +44,8 @@ class xAppMonControlContainer():
                                             server=self.xapp_gen.server,
                                             xapp_name=self.xapp_gen.get_xapp_name(),
                                             rmr_port=self.xapp_gen.rmr_port,
-                                            mrc=self.xapp_gen._mrc,
                                             http_port=self.xapp_gen.http_port,
+                                            mrc=self.xapp_gen._mrc,
                                             pltnamespace=self.xapp_gen.get_pltnamespace(),
                                             app_namespace=self.xapp_gen.get_app_namespace(),
                                             # control parameters
@@ -146,12 +146,7 @@ class xAppMonControlContainer():
         func_def_sub_dict[selected_format] = func_def_dict[selected_format]
 
         ev_trigger_tuple = (0, self.event_trigger)
-        status = self.kpm_func.subscribe(gnb=self.selected_gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
-
-        if status != 201:
-            self.xapp_gen.logger.error("[xAppMonControlContainer] Error subscribing to gNB {}: {}".format(self.gnb.inventory_name, status))
-            self.kpm_func.terminate(signal.SIGTERM, None)
-            return
+        self.kpm_func.subscribe(gnb=self.selected_gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict, ran_period_ms=1000, sst=self.sst, sd=self.sd)
 
         # Running xApp Thread
         self.xapp_gen.run()
