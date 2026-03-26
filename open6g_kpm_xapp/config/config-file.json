@@ -1,0 +1,47 @@
+{
+    "name": "open6g-kpm-xapp",
+    "version": "0.1.0",
+    "APP_NAMESPACE": "ricxapp-j",
+    "containers": [
+        {
+            "name": "open6g-kpm-xapp",
+            "image": {
+                "registry": "docker.io",
+                "name": "angeloferaudo/open6g-kpm-xapp",
+                "tag": "0.1.0"
+            }
+        }
+    ],
+    "messaging": {
+        "ports": [
+            {
+                "name": "http",
+                "container": "open6g-kpm-xapp",
+                "port": 8080,
+                "description": "http service"
+            },
+            {
+                "name": "rmrroute",
+                "container": "open6g-kpm-xapp",
+                "port": 4561,
+                "description": "rmr route port"
+            },
+            {
+                "name": "rmrdata",
+                "container": "open6g-kpm-xapp",
+                "port": 4560,
+                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "RIC_INDICATION"],
+                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ"],
+                "policies": [1],
+                "description": "rmr data port for open6g-kpm-xapp"
+            }
+        ]
+    },
+    "controls": {
+        "subscription": {
+          "url": "http://service-ricxapp-j-open6g-kpm-xapp-http:8080/",
+          "clientEndpoint": "service-ricxapp-j-open6g-kpm-xapp-http"
+        }
+      }
+
+}

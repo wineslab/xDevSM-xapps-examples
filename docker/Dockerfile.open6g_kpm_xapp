@@ -1,0 +1,78 @@
+FROM python:3.8-slim as stretch
+
+RUN apt-get update && \
+    apt-get install -y \
+        wget gcc musl-dev git
+
+ARG rmr_version=4.9.4
+ARG e2ap_version=2.0
+
+# Note: O-RAN-SC only publishes packages for Debian stretch, but stretch does not get official Rust 1.63 updates.
+#       Installing this on Debian bullseye seems to work... Should probably request newer packages from O-RAN-SC.
+RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr_${rmr_version}_amd64.deb/download.deb
+RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr-dev_${rmr_version}_amd64.deb/download.deb
+
+# Custom e2ap
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap_${e2ap_version}_amd64.deb
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/main/riclibe2ap-dev_${e2ap_version}_amd64.deb
+
+RUN dpkg -i rmr_${rmr_version}_amd64.deb
+RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
+
+RUN dpkg -i riclibe2ap_${e2ap_version}_amd64.deb
+RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
+
+# Get hash commits for xApp and xDevSM
+COPY . /tmp/xDevSM-xapps-examples/
+RUN cd /tmp/xDevSM-xapps-examples/ \
+    && echo "xApp on commit hash $(git log -1 --format=%H)" > /tmp/git_commit_info.log \
+    && cd xDevSM/ \
+    && echo "xDevSM on commit hash $(git log -1 --format=%H)" >> /tmp/git_commit_info.log
+
+
+FROM python:3.8-slim
+
+ARG rmr_version=4.9.4
+# ARG e2ap_version=1.1.0
+
+COPY --from=stretch /usr/local/lib/librmr_si.so.${rmr_version} /usr/local/lib/librmr_si.so
+COPY --from=stretch /usr/local/lib/libriclibe2ap.so /usr/local/lib/libriclibe2ap.so
+RUN chmod -R 755 /usr/local/lib/librmr_si.so
+RUN chmod -R 755 /usr/local/lib/libriclibe2ap.so
+
+# Upgrade pip, install tox
+RUN pip install --upgrade pip && pip install certifi six python_dateutil setuptools urllib3 logger requests inotify_simple mdclogpy google-api-python-client msgpack ricsdl
+RUN apt update
+RUN apt install -y htop nano procps
+
+RUN mkdir -p /ws
+RUN chmod -R 755 /ws
+WORKDIR "/ws" 
+
+COPY open6g_kpm_xapp .
+COPY xDevSM ./xDevSM
+COPY --from=stretch /tmp/git_commit_info.log ./git_commit_info.log
+
+# COPY ./sm_py_framework/lib/*.so /usr/local/lib/
+
+RUN pip install -r requirements.txt
+RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.8/site-packages/ricxappframe/e2ap/asn1.py
+
+
+ENV CONFIG_FILE=/ws/config/config-file.json
+ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
+ENV PLT_NAMESPACE="ricplt-j"
+
+# This is used to supply a static route table which can be used for debugging, 
+# testing, or if no route table generator process is being used to supply the route table. 
+# If not defined, no static table is used and RMR will not report ready until a table is received. 
+# The static route table may contain both the route table (between newrt start and end records), 
+# and the MEID map (between meid_map start and end records).
+ENV RMR_SEED_RT ./config/uta_rtg.rt
+ENV PLT_NAMESPACE="ricplt-j"
+
+# Automatic start
+# CMD ["python3", "xapp.py"] # and args...
+
+# Manual start
+ENTRYPOINT ["sleep", "infinity"]
