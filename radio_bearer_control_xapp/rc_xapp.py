@@ -49,7 +49,7 @@ def main(args):
 
     gnb, gnb_info = xapp_gen.get_selected_e2node_info(args.gnb_target)
     if not gnb:
-        xapp_gen.info("[Main] Terminating xapp")
+        xapp_gen.logger.info("[Main] Terminating xapp")
         rc_xapp.terminate(signal.SIGTERM, None)
         return
 
@@ -58,7 +58,6 @@ def main(args):
 
     rc_xapp.send(e2_node_id=gnb.inventory_name,
                 ran_func_dsc=ran_function_description,
-                ue_id_struct=None,  # Use struct
                 control_action_id=2)  # QoS flow mapping configuration
 
 

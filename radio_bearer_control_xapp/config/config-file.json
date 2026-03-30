@@ -1,13 +1,14 @@
 {
     "name": "radio-bearer-control-xapp",
-    "version": "0.2.0-dev",
+    "version": "0.3.0-dev",
+    "APP_NAMESPACE": "ricxapp-j",
     "containers": [
         {
             "name": "radio-bearer-control-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/radio-bearer-control-xapp",
-                "tag": "0.2.0-dev"
+                "tag": "0.3.0-dev"
             }
         }
     ],
@@ -38,8 +39,8 @@
     },
     "controls": {
         "subscription": {
-          "url": "http://service-ricxapp-radio-bearer-control-xapp-http:8080/",
-          "clientEndpoint": "service-ricxapp-radio-bearer-control-xapp-http"
+          "url": "http://service-ricxapp-j-radio-bearer-control-xapp-http:8080/",
+          "clientEndpoint": "service-ricxapp-j-radio-bearer-control-xapp-http"
         }
       }
 

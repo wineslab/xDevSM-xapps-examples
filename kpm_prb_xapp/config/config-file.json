@@ -1,14 +1,14 @@
 {
     "name": "kpm-prb-xapp",
-    "version": "0.1.0-dev",
-    "APP_NAMESPACE": "ricxapp",
+    "version": "0.2.0-dev",
+    "APP_NAMESPACE": "ricxapp-j",
     "containers": [
         {
             "name": "kpm-prb-xapp",
             "image": {
                 "registry": "docker.io",
                 "name": "angeloferaudo/kpm-prb-xapp",
-                "tag": "0.1.0-dev"
+                "tag": "0.2.0-dev"
             }
         }
     ],

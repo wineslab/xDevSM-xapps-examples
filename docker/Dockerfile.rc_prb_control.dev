@@ -66,7 +66,7 @@ ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
 # The static route table may contain both the route table (between newrt start and end records), 
 # and the MEID map (between meid_map start and end records).
 ENV RMR_SEED_RT ./config/uta_rtg.rt
-
+ENV PLT_NAMESPACE="ricplt-j"
 
 # Manual start
 ENTRYPOINT ["sleep", "infinity"]
