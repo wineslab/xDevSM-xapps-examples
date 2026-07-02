@@ -72,7 +72,7 @@ class xAppMonControlContainer():
         signal.signal(signal.SIGTERM, self.kpm_func.terminate)
 
 
-    def ind_msg_handler(self, ind_hdr, ind_msg, meid):
+    def ind_msg_handler(self, ind_hdr, ind_msg, meid, sub_id):
         """
         Handle the indication message received from the xApp
         """

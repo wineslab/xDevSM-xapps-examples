@@ -53,7 +53,9 @@ class PRBCotrolXAppDataManager():
         else:
             logger.warning("[PRBCotrolXAppDataManager] Redis endpoint not provided. Skipping Redis client setup.")
 
-    def handle_control_ack(self):
+    def handle_control_ack(self, summary=None):
+        # summary is passed by newer xDevSM versions (RMR message summary of the
+        # control ack, carrying the meid of the sender).
         global logger
         logger.info("[PRBCotrolXAppDataManager] Control Ack received!")
         if self.time_stamp_file_name:

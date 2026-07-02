@@ -122,10 +122,11 @@ class DataManager():
             self.df_dict[meas_type_str].append(meas_record.union.real_val)
 
 
-    # Called for each indication message received
-    def indication_callback(self, ind_hdr, ind_msg, meid):
+    # Called for each indication message received. sub_id is passed by newer
+    # xDevSM versions to correlate the indication with its subscription.
+    def indication_callback(self, ind_hdr, ind_msg, meid, sub_id=None):
         gnbid = meid.decode('utf-8')
-        logger.info("[Main] Received indication message from {}".format(gnbid))        
+        logger.info("[Main] Received indication message from {}".format(gnbid))
         # Decoding sender_name
         sender_name = None
         if ind_hdr.data.kpm_ric_ind_hdr_format_1.sender_name:
@@ -191,12 +192,12 @@ def sub_failed_callback(json_data):
 
 def main(args):
     global logger
-        
+
     # Creating a generic xDevSM RMR xApp
     xapp_gen = xDevSMRMRXapp("0.0.0.0", route_file=args.route_file)
     logger = xapp_gen.logger
 
-    
+
     # Adding kpm functionalities to the xapp
     kpm_xapp = XappKpmFrame(xapp_gen, 
                             logger, 
@@ -214,7 +215,7 @@ def main(args):
     xapp_gen.register_shutdown(data_manager.shutdown)
 
     # Registering the outermost rmr handler
-    xapp_gen.register_handler(kpm_xapp.handle) 
+    xapp_gen.register_handler(kpm_xapp.handle)
 
     # Registering indication message callback
     kpm_xapp.register_ind_msg_callback(handler=data_manager.indication_callback)
@@ -257,9 +258,15 @@ def main(args):
 
     logger.debug("[Main] Selected functions: {}".format(func_def_dict[selected_format]))
     time.sleep(10)
-    # Sending subscription
+    # Sending subscriptions — one per slice (SD). Each subscription gets its own
+    # sub_id, so per-slice indications can be distinguished in the callback.
     ev_trigger_tuple = (0, 1000)
-    kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple, func_def=func_def_sub_dict,  ran_period_ms=1000, sst=args.sst, sd=args.sd)
+    slice_sds = [int(x) for x in str(args.sd_list).split(",") if str(x).strip() != ""]
+    for sd in slice_sds:
+        sub_id = kpm_xapp.subscribe(gnb=gnb, ev_trigger=ev_trigger_tuple,
+                                    func_def=func_def_sub_dict, ran_period_ms=1000,
+                                    sst=args.sst, sd=sd)
+        logger.info("[Main] Subscribed slice sst={} sd={} -> sub_id={}".format(args.sst, sd, sub_id))
 
     # Start running after finishing subscription requests
 
@@ -273,9 +280,11 @@ if __name__ == '__main__':
     
     parser.add_argument("-s", "--sst", metavar="<sst>",
                         help="SST", type=int, default=1)
-    
-    parser.add_argument("-d", "--sd", metavar="<sd>",
-                        help="SD", type=int, default=1)
+
+    parser.add_argument("--sd-list", dest="sd_list", metavar="<sd1,sd2,...>",
+                        help="comma-separated SDs; the xApp creates one subscription per slice "
+                             "(default: 16777215)",
+                        type=str, default="16777215")
     
     parser.add_argument("-i", "--influx_end_point", metavar="http://<ip>:port",
                         help="influx db endpoint", type=str, default=None)
@@ -306,7 +315,7 @@ if __name__ == '__main__':
     parser.add_argument("-g", "--gnb_target", metavar="<gnb_target>",
                         help="gNB to subscribe to",
                         type=str)
-    
+
     args = parser.parse_args()
     
     main(args)

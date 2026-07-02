@@ -82,9 +82,11 @@ class xAppMonControlContainer():
             self.xapp_gen.logger.info("[xAppMonControlContainer] Data saved to {}".format(self.csv_file))
         self.kpm_func.terminate(signum, frame)
 
-    def ind_msg_handler(self, ind_hdr, ind_msg, meid):
+    def ind_msg_handler(self, ind_hdr, ind_msg, meid, sub_id=None):
         """
-        Handle the indication message received from the xApp
+        Handle the indication message received from the xApp.
+        sub_id is passed by newer xDevSM versions to correlate the indication
+        with its subscription.
         """
         gnbid = meid.decode('utf-8')
         self.xapp_gen.logger.info("[xAppMonControlContainer] Received indication message from {}".format(gnbid))
