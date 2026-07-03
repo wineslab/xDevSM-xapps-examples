@@ -1,0 +1,33 @@
+{
+  "sst": 1,
+  "plmn_real": "00F110",
+  "plmn_dt": "00F110",
+  "slices": [
+    {
+      "sd": 0,
+      "max_down_throughput_mbps": 50,
+      "max_up_throughput_mbps": null,
+      "min_prb_policy_ratio": 10,
+      "max_prb_policy_ratio": 100,
+      "dedicated_prb_policy_ratio": 5,
+      "prb_step": 5,
+      "under_threshold_gap": 10,
+      "prb_step_up": 2,
+      "improvement_epsilon": 1,
+      "convergence_indications": 5
+    },
+    {
+      "sd": 1,
+      "max_down_throughput_mbps": 30,
+      "max_up_throughput_mbps": null,
+      "min_prb_policy_ratio": 10,
+      "max_prb_policy_ratio": 100,
+      "dedicated_prb_policy_ratio": 5,
+      "prb_step": 5,
+      "under_threshold_gap": 10,
+      "prb_step_up": 2,
+      "improvement_epsilon": 1,
+      "convergence_indications": 5
+    }
+  ]
+}

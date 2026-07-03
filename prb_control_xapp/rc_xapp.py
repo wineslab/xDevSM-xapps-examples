@@ -1,6 +1,7 @@
 import time
 import argparse
 import signal
+import threading
 
 import influxdb_client
 import redis
@@ -13,6 +14,7 @@ from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
 # import RC Radio Resource Allocation Control Decorator
 from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
 
+from xDevSM.utils.utility import decode_meid
 
 logger = None
 
@@ -29,6 +31,9 @@ class PRBCotrolXAppDataManager():
         self.redis_client = None
         self.query_range = query_range
         self.query_api_influx = None
+        # Set when a control ACK is received, so the main thread can wait for it
+        # and shut down the xApp cleanly (the RMR loop runs in its own thread).
+        self.ack_received = threading.Event()
         self.rc_xapp.register_control_ack_suc_callback(self.handle_control_ack)
         self._setup_influxdb_client()
         self._setup_redis_client()
@@ -53,14 +58,23 @@ class PRBCotrolXAppDataManager():
         else:
             logger.warning("[PRBCotrolXAppDataManager] Redis endpoint not provided. Skipping Redis client setup.")
 
-    def handle_control_ack(self):
+    def handle_control_ack(self, summary=None):
+        # summary is passed by newer xDevSM versions (RMR message summary of the
+        # control ack, carrying the meid of the sender).
         global logger
-        logger.info("[PRBCotrolXAppDataManager] Control Ack received!")
+        meid = decode_meid(summary)
+        if meid is None:
+            return
+    
+
+        logger.info("[PRBCotrolXAppDataManager] Control Ack received from gNB with MEID: {}".format(meid))
         if self.time_stamp_file_name:
             with open(self.time_stamp_file_name, "a") as f:
                 timestamp_ms = int(time.time() * 1000)
-                f.write(f"{timestamp_ms} - ACK - [PRBCotrolXAppDataManager] Control Ack received!\n")
-        self.rc_xapp.terminate(signal.SIGTERM, None)
+                f.write(f"{timestamp_ms} - ACK - [PRBCotrolXAppDataManager] Control Ack received from gNB with MEID: {meid}\n")
+        # This runs in the RMR dispatch thread. Don't tear down the loop from
+        # here; just signal the main thread, which owns the shutdown.
+        self.ack_received.set()
     
     def read_data_from_influx(self):
         if not self.influx_client:
@@ -199,6 +213,15 @@ def main(args):
                 ue_id_struct=None, # this ue id is the struct
                 control_action_id=6)  # Slice-level PRB quota
 
+    # Wait for the control ACK (signalled from the RMR thread), then shut down
+    # cleanly on the main thread. The timeout guards against a lost/never-sent
+    # ACK so the xApp can't hang forever.
+    if prb_data_manager.ack_received.wait(timeout=args.ack_timeout):
+        logger.info("[Main] Control ACK received - terminating xapp")
+    else:
+        logger.warning("[Main] No control ACK within {}s - terminating xapp".format(args.ack_timeout))
+    rc_xapp.terminate(signal.SIGTERM, None)
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="prb xApp")
 
@@ -249,6 +272,10 @@ if __name__ == '__main__':
     parser.add_argument("-u", "--ue_id", metavar="<ue_id>",
                         help="ue id to use when db not available",
                         type=int, default=1)
+    # how long to wait for the control ACK before terminating anyway
+    parser.add_argument("--ack_timeout", metavar="<seconds>",
+                        help="max seconds to wait for the control ACK before terminating",
+                        type=float, default=30.0)
     
     args = parser.parse_args()
     main(args)
