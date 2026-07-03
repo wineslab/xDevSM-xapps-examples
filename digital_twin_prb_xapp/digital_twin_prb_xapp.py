@@ -15,6 +15,8 @@ from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
 from xDevSM.decorators.kpm.kpm_frame import XappKpmFrame
 from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
 
+from xDevSM.utils.utility import decode_meid
+
 from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
 from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
 from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
@@ -644,7 +646,7 @@ class xAppMonControlContainer():
         ratios to that gNB's slice runtime; real-gNB propagation happens
         from `ind_msg_handler` once DT throughput drops under the threshold.
         """
-        meid = self._decode_meid(summary)
+        meid = decode_meid(summary)
         if meid is None:
             return
         with self._ctrl_lock:
@@ -670,7 +672,7 @@ class xAppMonControlContainer():
         self._try_send_to_gnb(meid)
 
     def control_ack_failure_callback(self, summary):
-        meid = self._decode_meid(summary)
+        meid = decode_meid(summary)
         if meid is None:
             return
         with self._ctrl_lock:
@@ -688,13 +690,6 @@ class xAppMonControlContainer():
             "[xAppMonControlContainer] control failed on {} sd={} - not propagating; draining queue".format(meid, sd))
         # Do NOT replay to the real gNB; just drain whatever is next on this gNB.
         self._try_send_to_gnb(meid)
-
-    @staticmethod
-    def _decode_meid(summary):
-        raw = summary.get('meid')
-        if raw is None:
-            return None
-        return raw.decode('utf-8') if isinstance(raw, (bytes, bytearray)) else raw
 
     # ------------------------------------------------------------------ #
     # KPM utility helpers

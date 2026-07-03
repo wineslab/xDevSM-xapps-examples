@@ -3,3 +3,12 @@
 __pycache__/
 *.pyc
 
+# graphify: local build state (regenerated per machine) — keep the shareable
+# outputs tracked (graph.json, GRAPH_REPORT.md, wiki/, graph.html).
+graphify-out/cache/
+graphify-out/manifest.json
+graphify-out/cost.json
+graphify-out/.graphify_python
+graphify-out/.graphify_root
+graphify-out/.graphify_labels.json
+
