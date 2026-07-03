@@ -1,0 +1,10 @@
+# Keep the docker build context small. NOTE: .git is intentionally NOT
+# excluded — Dockerfile.kpm_basic_xapp.dev and Dockerfile.rc_prb_control.dev
+# run `git log` in a builder stage to record commit provenance.
+graphify-out/
+**/__pycache__/
+*.pyc
+.vscode/
+.DS_Store
+*.bak
+docker/

@@ -2,6 +2,7 @@
 .vscode/
 __pycache__/
 *.pyc
+*.bak
 
 # graphify: local build state (regenerated per machine) — keep the shareable
 # outputs tracked (graph.json, GRAPH_REPORT.md, wiki/, graph.html).
