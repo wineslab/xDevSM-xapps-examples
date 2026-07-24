@@ -5,16 +5,15 @@ import threading
 
 import influxdb_client
 import redis
-import setup_imports
 
 
 # import xDevSM base xapp
-from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
+from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
 
 # import RC Radio Resource Allocation Control Decorator
-from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
+from xdevsm.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
 
-from xDevSM.utils.utility import decode_meid
+from xdevsm.utils.utility import decode_meid
 
 logger = None
 

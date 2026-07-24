@@ -1,4 +1,4 @@
-FROM python:3.8-slim as stretch
+FROM python:3.11-slim-bullseye as stretch
 
 RUN apt-get update && \
     apt-get install -y \
@@ -22,7 +22,7 @@ RUN dpkg -i rmr-dev_${rmr_version}_amd64.deb
 RUN dpkg -i riclibe2ap_${e2ap_version}_amd64.deb
 RUN dpkg -i riclibe2ap-dev_${e2ap_version}_amd64.deb
 
-FROM python:3.8-slim
+FROM python:3.11-slim-bullseye
 
 ARG rmr_version=4.8.0
 # ARG e2ap_version=1.1.0
@@ -42,17 +42,16 @@ RUN chmod -R 755 /ws
 WORKDIR "/ws" 
 
 COPY ho_xapp .
-COPY xDevSM ./xDevSM
 
 
 # COPY ./sm_py_framework/lib/*.so /usr/local/lib/
 
 RUN pip install -r requirements.txt
-RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.8/site-packages/ricxappframe/e2ap/asn1.py
+RUN sed -i 's/^\([[:space:]]*\)# \(_asn1_free_indicationMsg(indication)\)/\1\2/' /usr/local/lib/python3.11/site-packages/ricxappframe/e2ap/asn1.py
 
 
 ENV CONFIG_FILE=/ws/config/config-file.json
-ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib:/ws/xDevSM/sm_framework/lib
+ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib
 
 # This is used to supply a static route table which can be used for debugging, 
 # testing, or if no route table generator process is being used to supply the route table. 

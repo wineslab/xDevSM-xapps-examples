@@ -8,19 +8,18 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-import setup_imports  # noqa: F401  -- side-effect: configures xDevSM imports
 from mdclogpy import Level
 
-from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
-from xDevSM.decorators.kpm.kpm_frame import XappKpmFrame
-from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
+from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
+from xdevsm.decorators.kpm.kpm_frame import XappKpmFrame
+from xdevsm.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
 
-from xDevSM.utils.utility import decode_meid
+from xdevsm.utils.utility import decode_meid
 
-from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
-from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_action_def_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_ind_msg_e
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_type_enum
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_value_e
 
 
 string_to_level = {"DEBUG": Level.DEBUG,
