@@ -53,9 +53,12 @@ class PRBCotrolXAppDataManager():
         else:
             logger.warning("[PRBCotrolXAppDataManager] Redis endpoint not provided. Skipping Redis client setup.")
 
-    def handle_control_ack(self):
+    def handle_control_ack(self, ack):
+        # The framework calls this with the decoded acknowledge, or with the raw
+        # RMR summary when the PDU did not yield one. Taking no argument at all,
+        # as this did, is a TypeError on every ack.
         global logger
-        logger.info("[PRBCotrolXAppDataManager] Control Ack received!")
+        logger.info("[PRBCotrolXAppDataManager] Control Ack received: {}".format(ack))
         if self.time_stamp_file_name:
             with open(self.time_stamp_file_name, "a") as f:
                 timestamp_ms = int(time.time() * 1000)
