@@ -283,6 +283,8 @@ class Scenario:
         self.port.send_control(target, member, *ratios)
         self.sent_controls += 1
         self._wait(lambda: len(self.journal.acks()) > acks_before, self._deadline(cfg.control_ack_timeout_s))
+        outcome = next(iter(self.journal.outcomes()[acks_before:]), None)
+        self._add(checks.check_control_outcome(name, outcome, nci, *ratios))
 
         changes = [s for s in reacting if s.is_change_trigger]
         per_change = [s for s in reacting if not s.is_change_trigger and s.report_type == REPORT_TYPE_CHANGE]

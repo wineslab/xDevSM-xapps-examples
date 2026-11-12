@@ -208,3 +208,18 @@ def test_admission_of_the_inadmissible_subscriptions():
     assert checks.check_admission(reject, Outcome.REJECTED, "cause").passed
     assert not checks.check_admission(reject, Outcome.ADMITTED, None).passed
     assert reject.level is Level.CELL and reject.trigger is Trigger.NODE_CHANGE
+
+
+def test_ocudu_control_outcome_accepts_the_requested_ratios():
+    from xdevsm.sm_framework.py_oran.ccc.ccc_decoder import CccControlOutcome
+
+    current = dict(oj.ratio("PRB_DL", 1, max_ratio=50), rRMPolicyDedicatedRatio=1)
+    outcome = CccControlOutcome(json.dumps({"listOfCellsForControlOutcome": [{
+        "cellGlobalId": oj.TEST_CELL, "ranConfigurationStructuresAcceptedList": [{
+            "ranConfigurationStructureName": RRM,
+            "oldValuesOfAttributes": {"ranConfigurationStructure": {"resourceType": "PRB_DL"}},
+            "currentValuesOfAttributes": {"ranConfigurationStructure": current}}]}]}).encode())
+    assert checks.check_control_outcome("control", outcome, oj.TEST_NCI, 0, 50).passed
+    result = checks.check_control_outcome("control", outcome, oj.TEST_NCI, 0, 40)
+    assert not result.passed and "instead of (0, 40)" in result.detail
+    assert not checks.check_control_outcome("control", None, oj.TEST_NCI, 0, 50).passed

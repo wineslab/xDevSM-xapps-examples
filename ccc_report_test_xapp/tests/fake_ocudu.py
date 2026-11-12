@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 
-from xdevsm.sm_framework.py_oran.ccc.ccc_decoder import CccIndicationHeader, CccIndicationMessage
+from xdevsm.sm_framework.py_oran.ccc.ccc_decoder import CccControlOutcome, CccIndicationHeader, CccIndicationMessage
 from xdevsm.sm_framework.py_oran.ccc.ccc_encoder import (
     encode_action_definition_cell_level,
     encode_action_definition_node_level,
@@ -168,7 +168,18 @@ class FakeOcudu:
             for sub in self._subs.values():
                 if sub.trigger != "periodic" and not sub.pending_upon_subscription:
                     self._evaluate_change(sub)
-        self.journal.on_control_ack(AckKind.ACK)
+        self.journal.on_control_ack(AckKind.ACK, CccControlOutcome(self._outcome(cell, member, min_ratio, max_ratio)))
+
+    @staticmethod
+    def _outcome(cell: dict, member: dict, min_ratio: int, max_ratio: int) -> bytes:
+        """The outcome of convert_to_e2sm_response: the request's new values as currentValuesOfAttributes."""
+        current = {"resourceType": "PRB_DL", "rRMPolicyMemberList": [member], "rRMPolicyMaxRatio": max_ratio,
+                   "rRMPolicyMinRatio": min_ratio, "rRMPolicyDedicatedRatio": 1}
+        accepted = {"ranConfigurationStructureName": "O-RRMPolicyRatio",
+                    "oldValuesOfAttributes": {"ranConfigurationStructure": {"resourceType": "PRB_DL"}},
+                    "currentValuesOfAttributes": {"ranConfigurationStructure": current}}
+        cells = [{"cellGlobalId": cell, "ranConfigurationStructuresAcceptedList": [accepted]}]
+        return json.dumps({"listOfCellsForControlOutcome": cells}).encode()
 
     def unsubscribe_all(self) -> None:
         with self._lock:

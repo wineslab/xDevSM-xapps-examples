@@ -4,7 +4,7 @@ from collections import Counter
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
-from xdevsm.sm_framework.py_oran.ccc.ccc_decoder import ReportedStructure, ntp_to_unix_s
+from xdevsm.sm_framework.py_oran.ccc.ccc_decoder import CccControlOutcome, ReportedStructure, ntp_to_unix_s
 from xdevsm.sm_framework.py_oran.ccc.ccc_encoder import nr_cell_id_of
 from xdevsm.sm_framework.py_oran.ccc.constants import (
     ACTION_DEF_FORMAT_CELL_LEVEL,
@@ -39,6 +39,8 @@ from ccc_test.report import CheckResult, check
 from ccc_test.structures import (
     ATTRIBUTE_NAMES,
     CELL_STRUCTURES,
+    MAX_RATIO,
+    MIN_RATIO,
     NODE_STRUCTURES,
     count_problems,
     instance_key,
@@ -434,3 +436,21 @@ def check_reasons(spec: Spec, inds: List[Indication], upon_change: int) -> Check
 def check_acks(acks: List[AckKind], expected: int) -> CheckResult:
     problems = [] if acks == [AckKind.ACK] * expected else ["{}".format([a.value for a in acks])]
     return check("RIC Control Acknowledge for each of the {} controls".format(expected), problems)
+
+
+def check_control_outcome(step_name: str, outcome: Optional[CccControlOutcome], nci: int, min_ratio: int,
+                          max_ratio: int) -> CheckResult:
+    """The outcome of an acknowledged control accepts the one O-RRMPolicyRatio of the cell with the requested ratios."""
+    name = "control outcome of the {} accepts the O-RRMPolicyRatio".format(step_name)
+    if outcome is None:
+        return check(name, ["the acknowledge carries no decodable E2SM-CCC Control Outcome"])
+    structures = outcome.structures()
+    problems = [] if len(structures) == 1 else ["{} structures".format(len(structures))]
+    for s in structures:
+        if (s.ran_cfg_structure_name, s.applied, s.nr_cell_id) != (STRUCT_O_RRM_POLICY_RATIO, True, nci):
+            problems.append("{}".format(s))
+            continue
+        applied = (s.applied_values.get(MIN_RATIO), s.applied_values.get(MAX_RATIO))
+        if applied != (min_ratio, max_ratio):
+            problems.append("applied min and max ratios {} instead of {}".format(applied, (min_ratio, max_ratio)))
+    return check(name, problems)

@@ -5,6 +5,7 @@ from enum import Enum
 from typing import Callable, Dict, List, Optional, Tuple
 
 from xdevsm.sm_framework.py_oran.ccc.ccc_decoder import (
+    CccControlOutcome,
     CccIndicationHeader,
     CccIndicationMessage,
     ReportedStructure,
@@ -62,7 +63,7 @@ class Journal:
         self._instance_id: Dict[str, int] = {}
         self._rejected: Dict[str, str] = {}
         self._by_instance: Dict[int, List[Indication]] = {}
-        self._acks: List[Tuple[AckKind, float]] = []
+        self._acks: List[Tuple[AckKind, float, Optional[CccControlOutcome]]] = []
         self._aborted = False
 
     def on_subscribed(self, key: str, submgr_id: Optional[str]) -> None:
@@ -85,9 +86,9 @@ class Journal:
             self._by_instance.setdefault(int(instance_id), []).append(indication)
             self._cond.notify_all()
 
-    def on_control_ack(self, kind: AckKind) -> None:
+    def on_control_ack(self, kind: AckKind, outcome: Optional[CccControlOutcome] = None) -> None:
         with self._cond:
-            self._acks.append((kind, self.clock()))
+            self._acks.append((kind, self.clock(), outcome))
             self._cond.notify_all()
 
     def abort(self) -> None:
@@ -134,7 +135,12 @@ class Journal:
 
     def acks(self, since_s: float = float("-inf")) -> List[AckKind]:
         with self._cond:
-            return [kind for kind, t in self._acks if t >= since_s]
+            return [kind for kind, t, _ in self._acks if t >= since_s]
+
+    def outcomes(self, since_s: float = float("-inf")) -> List[Optional[CccControlOutcome]]:
+        """The decoded E2SM-CCC Control Outcomes of the acknowledges, None for one that does not decode."""
+        with self._cond:
+            return [outcome for _, t, outcome in self._acks if t >= since_s]
 
     def wait_until(self, predicate: Callable[[], bool], deadline_s: float) -> bool:
         """Wait until ``predicate`` holds or the clock reaches ``deadline_s``. Returns the last value of it."""

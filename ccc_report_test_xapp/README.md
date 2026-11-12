@@ -18,6 +18,8 @@ The xApp runs once and stops. It logs one `PASS` or `FAIL` line per check and a 
 6. After each CONTROL, it checks the uponChange and periodic indications, the old and new values, and the eventTime order.
 7. It deletes its subscriptions.
 
+The xApp reads the acknowledges through the `CccControlAck` callback of xDevSM. ricxappframe decodes an acknowledge only with the xDevSM patches, which the image applies.
+
 If the run stops after the first CONTROL, the xApp sends the restore CONTROL before it deletes its subscriptions.
 
 ## Subscriptions
@@ -55,7 +57,7 @@ The two `reject-` subscriptions must fail: a node configuration change trigger d
 | Only the listed structures | O-GNBDUFunction, O-NRCellDU and O-BWP subscriptions send no change report for an O-RRMPolicyRatio CONTROL. |
 | Periodic reports of a change | Report type change sends one periodic indication per change. Report type all sends the change in exactly one periodic indication. |
 | eventTime | 16 hexadecimal digits. It does not decrease in a subscription. All uponChange indications of one CONTROL have the same eventTime. uponChange is after uponSubscription. A periodic report of a change is not before its uponChange. |
-| CONTROL | A RIC Control Acknowledge for each CONTROL. After the restore, the slice has the values that the DU reports for the original ratios. |
+| CONTROL | A RIC Control Acknowledge for each CONTROL. Its E2SM-CCC Control Outcome accepts the O-RRMPolicyRatio of the cell with the requested min and max ratios. After the restore, the slice has the values that the DU reports for the original ratios. |
 
 The xApp expects the values that the DU reports after a CONTROL. The DU converts a ratio to PRBs and reports the smallest ratio of that PRB count, and it keeps no dedicated PRBs. The xApp gets the PRB count from the numberOfRBs of the initial DL BWP.
 

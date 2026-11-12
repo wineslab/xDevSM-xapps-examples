@@ -12,7 +12,7 @@ import sys
 from typing import Optional
 
 from mdclogpy import Level
-from ricxappframe.xapp_frame import rmr
+from xdevsm.decorators.ccc.ccc_control import CccControlAck
 from xdevsm.decorators.ccc.ccc_frame import XappCccFrame
 from xdevsm.decorators.ccc.ccc_rrm_policy_control import CccRrmPolicyRatioControl
 from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
@@ -23,7 +23,6 @@ from xdevsm.sm_framework.py_oran.ccc.ccc_encoder import (
     encode_event_trigger_periodic,
     nr_cell_id_of,
 )
-from xdevsm.utils.constants import Values
 
 from ccc_test import config
 from ccc_test.journal import AckKind, Journal, make_indication
@@ -132,20 +131,16 @@ def _wire(xapp: xDevSMRMRXapp, journal: Journal):
     def on_indication(hdr, msg, meid, sub_id):
         journal.on_indication(sub_id, make_indication(hdr, msg, journal.clock()))
 
-    def on_rmr(rmr_xapp, summary, sbuf):
-        # The acknowledges are recorded here, so that the control service decodes no E2SM-DAPP outcome.
-        mtype = summary[rmr.RMR_MS_MSG_TYPE]
-        if mtype == Values.RIC_CONTROL_ACK:
-            journal.on_control_ack(AckKind.ACK)
-        elif mtype == Values.RIC_CONTROL_FAILURE:
-            journal.on_control_ack(AckKind.FAILURE)
-        frame.handle(rmr_xapp, summary, sbuf)
+    def on_ack(ack):
+        journal.on_control_ack(AckKind.ACK, ack.outcome if isinstance(ack, CccControlAck) else None)
 
+    control.register_control_ack_suc_callback(on_ack)
+    control.register_control_ack_fail_callback(lambda ack: journal.on_control_ack(AckKind.FAILURE))
     frame.register_ind_msg_callback(on_indication)
     frame.register_sub_resolved_callback(lambda sub_id, instance_id, gnb: journal.on_resolved(sub_id, instance_id))
     frame.register_sub_fail_callback(lambda response: journal.on_rejected(response.get("SubscriptionId"),
                                                                           _rejection_cause(response)))
-    xapp.register_handler(on_rmr)
+    xapp.register_handler(frame.handle)
     return frame, control
 
 
