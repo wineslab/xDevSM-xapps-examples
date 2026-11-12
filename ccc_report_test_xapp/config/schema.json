@@ -1,0 +1,32 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "#/controls",
+    "type": "object",
+    "title": "Controls Section Schema",
+    "required": [
+    ],
+    "properties": {
+        "subscription": {
+            "type": "object"
+        },
+        "ccc_report_test": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "gnb_target": {"type": "string", "description": "E2 node inventory name; default: the first connected E2 node"},
+                "nci": {"type": ["integer", "string"], "description": "NR Cell Identity of the cell to control; default: the first cell"},
+                "sst": {"type": "integer", "minimum": 0, "maximum": 255},
+                "sd": {"type": "string", "pattern": "^[0-9a-fA-F]{6}$"},
+                "resource_type": {"type": "string", "enum": ["PRB_DL", "PRB_UL"]},
+                "control_max_ratio": {"type": "integer", "minimum": 1, "maximum": 100},
+                "period_ms": {"type": "integer", "minimum": 10},
+                "periodic_count": {"type": "integer", "minimum": 1},
+                "e2_node_timeout_s": {"type": "number", "exclusiveMinimum": 0},
+                "subscription_timeout_s": {"type": "number", "exclusiveMinimum": 0},
+                "indication_timeout_s": {"type": "number", "exclusiveMinimum": 0},
+                "control_ack_timeout_s": {"type": "number", "exclusiveMinimum": 0},
+                "log_level": {"type": "string", "enum": ["DEBUG", "INFO", "WARNING", "ERROR"]}
+            }
+        }
+    }
+}

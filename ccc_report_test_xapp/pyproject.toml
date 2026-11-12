@@ -1,0 +1,22 @@
+[project]
+name = "ccc-report-test-xapp"
+version = "0.1.0"
+description = "E2SM-CCC REPORT end-to-end test xApp for OCUDU, built on xDevSM"
+readme = "README.md"
+# xdevsm installs on Python 3.11 only: ricxappframe -> ricsdl -> hiredis==2.0.0 does not build on 3.12.
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "xdevsm>=0.1.9",
+    # ricxappframe.subsclient imports six without declaring it.
+    "six",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
