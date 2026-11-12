@@ -14,23 +14,26 @@ This repository contains a set of example xApps built using the xDevSM framework
 | `digital_twin_prb_xapp/` | `digital_twin_prb_xapp.py` | KPM + RC | Per-slice PRB allocation on a real gNB and its digital twin: every control is validated on the DT before being replayed on the real gNB. |
 | `traffic_balancer_xapp/` | `traffic_balancer.py` | KPM + RC | KPM monitor + PRB-quota controller: runs a swappable balancing policy across two slices and applies the chosen PRB minima via ACK-gated RC controls. |
 
-Each folder is self-contained and follows the same layout: `<entry>.py`, `setup_imports.py` (sys.path bootstrap — must be imported first), `requirements.txt`, and `config/` (xApp descriptor `config-file.json`, `schema.json`, RMR route table `uta_rtg.rt`).
+Each folder is self-contained and follows the same layout: `<entry>.py`, `requirements.txt`, and `config/` (xApp descriptor `config-file.json`, `schema.json`, RMR route table `uta_rtg.rt`).
 
 ## Use xDevSM
 
-Clone the repository and initialize the submodules:
+xDevSM is now the [`xdevsm`](https://pypi.org/project/xdevsm/) PyPI package (it used to be a git
+submodule of this repo). Clone the repository and install the chosen xApp's requirements —
+`xdevsm` is pulled in automatically:
+
 ```bash
 git clone https://github.com/wineslab/xDevSM-xapps-examples.git
-
-# clone xDevSM code
-git submodule init
-git submodule update
+cd xDevSM-xapps-examples/<xapp-folder>
+pip install -r requirements.txt   # installs xdevsm from PyPI
 ```
+
+No `git submodule init/update` step is needed anymore.
 
 ## Build & Deployment workflow
 **Note:** The following steps are general, so you can also apply them to build the image of your custom xApp.
 
-1. Clone the repository and initialize submodules.
+1. Clone the repository (no submodules to initialize).
 2. Pick the xApp folder you wish to build.
 3. Build the container image using the appropriate Dockerfile in docker.
 
@@ -81,7 +84,7 @@ python <entry>.py -r ./config/uta_rtg.rt
 
 The non-`.dev` images run the xApp directly via `CMD ["python", "<entry>.py"]`.
 
-**Reminder:** the build context must include the `xDevSM/` submodule, so run `git submodule init && git submodule update` before building any image.
+**Note:** the images install `xdevsm` from PyPI via each xApp's `requirements.txt`; there is no `xDevSM/` submodule to initialize before building.
 
 ## Custom xApp Development
 

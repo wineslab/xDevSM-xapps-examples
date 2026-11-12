@@ -1,24 +1,23 @@
 import argparse
 import signal
 import numpy as np
-import setup_imports
 import time
 import pandas as pd
 from mdclogpy import Level
 
 # import xDevSM base xapp
-from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
+from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
 
 # import xDevSM kpm decorator
-from xDevSM.decorators.kpm.kpm_frame import XappKpmFrame
+from xdevsm.decorators.kpm.kpm_frame import XappKpmFrame
 # import xDevSM rc decorator
-from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
+from xdevsm.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
 
 # kpm related formats
-from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
-from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_action_def_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_ind_msg_e
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_type_enum
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_value_e
 
 
 string_to_level = {"DEBUG": Level.DEBUG,

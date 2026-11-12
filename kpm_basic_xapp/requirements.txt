@@ -5,3 +5,4 @@ numpy==1.24.4
 influxdb-client==1.47.0 
 pandas
 redis
+xdevsm>=0.1.0

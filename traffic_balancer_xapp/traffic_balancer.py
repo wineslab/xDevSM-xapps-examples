@@ -19,13 +19,12 @@ import signal
 import sys
 import time
 
-import setup_imports  # noqa: F401  -- MUST be imported before any xDevSM.* import
 
 from mdclogpy import Level
 
-from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
-from xDevSM.decorators.kpm.kpm_frame import XappKpmFrame
-from xDevSM.decorators.rc.rc_radio_resource_alloc_control import (
+from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
+from xdevsm.decorators.kpm.kpm_frame import XappKpmFrame
+from xdevsm.decorators.rc.rc_radio_resource_alloc_control import (
     RadioResourceAllocationControl,
 )
 

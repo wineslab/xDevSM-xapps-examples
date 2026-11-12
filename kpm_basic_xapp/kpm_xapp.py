@@ -7,21 +7,20 @@ import numpy as np
 import pandas as pd
 from influxdb_client.client.write_api import SYNCHRONOUS
 
-import setup_imports
 
-# import xDevSM.kpm.xapp_kpm_frame as kpmframe
+# import xdevsm.kpm.xapp_kpm_frame as kpmframe
 
 # import xDevSM base xapp
-from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
+from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
 
 # import xDevSM kpm decorator
-from xDevSM.decorators.kpm.kpm_frame import XappKpmFrame
+from xdevsm.decorators.kpm.kpm_frame import XappKpmFrame
 
 
-from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
-from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_action_def_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_ind_msg_e
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_type_enum
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_value_e
 
 logger = None
 
