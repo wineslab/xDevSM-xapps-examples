@@ -1,0 +1,96 @@
+# syntax=docker/dockerfile:1
+# E2SM-CCC REPORT test xApp. Build from the repository root:
+#   docker build --platform linux/amd64 --tag ccc-report-test-xapp:0.1.0-dev \
+#     --file docker/Dockerfile.ccc_report_test.dev .
+ARG UV_VERSION=0.9.30
+
+FROM ghcr.io/astral-sh/uv:${UV_VERSION} AS uv
+
+FROM python:3.11-slim-bookworm AS stretch
+
+ARG rmr_version=4.9.4
+ARG e2ap_version=2.0
+
+RUN apt-get update && \
+    apt-get install -y wget
+
+# Note: O-RAN-SC only publishes packages for Debian stretch. Installing them on Debian bookworm works.
+RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr_${rmr_version}_amd64.deb/download.deb
+RUN wget -nv --content-disposition https://packagecloud.io/o-ran-sc/release/packages/debian/stretch/rmr-dev_${rmr_version}_amd64.deb/download.deb
+
+# Custom e2ap
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/dev/riclibe2ap_${e2ap_version}_amd64.deb
+RUN wget -nv --content-disposition https://github.com/aferaudo/libe2ap_package/raw/refs/heads/dev/riclibe2ap-dev_${e2ap_version}_amd64.deb
+
+RUN dpkg -i rmr_${rmr_version}_amd64.deb rmr-dev_${rmr_version}_amd64.deb \
+    riclibe2ap_${e2ap_version}_amd64.deb riclibe2ap-dev_${e2ap_version}_amd64.deb
+
+# apt fails on bullseye: the bullseye-security archive no longer serves the packages of its index.
+FROM python:3.11-slim-bookworm
+
+ARG rmr_version=4.9.4
+
+COPY --from=stretch /usr/local/lib/librmr_si.so.${rmr_version} /usr/local/lib/librmr_si.so
+COPY --from=stretch /usr/local/lib/libriclibe2ap.so /usr/local/lib/libriclibe2ap.so
+RUN chmod 755 /usr/local/lib/librmr_si.so /usr/local/lib/libriclibe2ap.so
+ENV LD_LIBRARY_PATH=/lib:/usr/lib:/usr/local/lib
+COPY --from=uv /uv /uvx /bin/
+
+# build-essential builds hiredis==2.0.0, which has no wheel for Python 3.11. patch applies the ricxappframe patches.
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends build-essential patch procps nano && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /ws
+ENV UV_PYTHON_DOWNLOADS=never
+ENV UV_LINK_MODE=copy
+
+COPY ccc_report_test_xapp/ ./
+
+RUN uv sync --no-dev
+
+RUN uv run --no-sync python -m xdevsm.ricxappframe_patches
+
+# glibc 2.36 and later load the xdevsm encoders, which ask for an executable stack, only into a process that
+# already has one. The script marks a copy of the interpreter, because a running binary cannot be written.
+RUN python3 - <<'EOF'
+import os
+import struct
+
+PT_GNU_STACK = 0x6474E551
+PF_X = 0x1
+path = os.path.realpath("/ws/.venv/bin/python")
+binary = bytearray(open(path, "rb").read())
+assert binary[:4] == b"\x7fELF" and binary[4] == 2, "the interpreter is not an ELF64 binary"
+table, = struct.unpack_from("<Q", binary, 0x20)
+entry_size, count = struct.unpack_from("<HH", binary, 0x36)
+for offset in range(table, table + entry_size * count, entry_size):
+    kind, flags = struct.unpack_from("<II", binary, offset)
+    if kind == PT_GNU_STACK:
+        struct.pack_into("<I", binary, offset + 4, flags | PF_X)
+        break
+else:
+    raise SystemExit("the interpreter has no PT_GNU_STACK header")
+open("/tmp/python.execstack", "wb").write(binary)
+EOF
+RUN cp /tmp/python.execstack "$(readlink -f /ws/.venv/bin/python)" && rm /tmp/python.execstack
+
+# ricxappframe opens librmr_si.so at import time, so this also checks RMR and the encoders.
+RUN uv run --no-sync python -c "import ccc_report_test_xapp"
+
+RUN uv run --no-sync python -c 'import importlib.metadata as m; print("xdevsm", m.version("xdevsm"))' \
+    > /ws/xdevsm_version.log
+
+ENV UV_NO_SYNC=1
+ENV PYTHONUNBUFFERED=1
+ENV CONFIG_FILE=/ws/config/config-file.json
+
+# This is used to supply a static route table which can be used for debugging,
+# testing, or if no route table generator process is being used to supply the route table.
+# If not defined, no static table is used and RMR will not report ready until a table is received.
+ENV RMR_SEED_RT=./config/uta_rtg.rt
+ENV PLT_NAMESPACE="ricplt-j"
+
+# Manual start: exec in and run
+#   uv run python ccc_report_test_xapp.py -g <E2 node inventory name>
+ENTRYPOINT ["sleep", "infinity"]

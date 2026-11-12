@@ -1,0 +1,57 @@
+{
+    "name": "ccc-report-test-xapp",
+    "version": "0.1.0-dev",
+    "APP_NAMESPACE": "ricxapp-j",
+    "containers": [
+        {
+            "name": "ccc-report-test-xapp",
+            "image": {
+                "registry": "docker.io",
+                "name": "wineslab/ccc-report-test-xapp",
+                "tag": "0.1.0-dev"
+            }
+        }
+    ],
+    "messaging": {
+        "ports": [
+            {
+                "name": "http",
+                "container": "ccc-report-test-xapp",
+                "port": 8080,
+                "description": "http service"
+            },
+            {
+                "name": "rmrroute",
+                "container": "ccc-report-test-xapp",
+                "port": 4561,
+                "description": "rmr route port"
+            },
+            {
+                "name": "rmrdata",
+                "container": "ccc-report-test-xapp",
+                "port": 4560,
+                "rxMessages": ["RIC_SUB_RESP", "RIC_SUB_FAILURE", "RIC_SUB_DEL_RESP", "RIC_SUB_DEL_FAILURE", "RIC_INDICATION", "RIC_CONTROL_ACK", "RIC_CONTROL_FAILURE"],
+                "txMessages": ["RIC_SUB_REQ", "RIC_SUB_DEL_REQ", "RIC_CONTROL_REQ"],
+                "policies": [1],
+                "description": "rmr data port for ccc-report-test-xapp"
+            }
+        ]
+    },
+    "controls": {
+        "subscription": {
+            "url": "http://service-ricxapp-j-ccc-report-test-xapp-http:8080/",
+            "clientEndpoint": "service-ricxapp-j-ccc-report-test-xapp-http"
+        },
+        "ccc_report_test": {
+            "resource_type": "PRB_DL",
+            "control_max_ratio": 50,
+            "period_ms": 1000,
+            "periodic_count": 2,
+            "e2_node_timeout_s": 60,
+            "subscription_timeout_s": 10,
+            "indication_timeout_s": 5,
+            "control_ack_timeout_s": 5,
+            "log_level": "INFO"
+        }
+    }
+}

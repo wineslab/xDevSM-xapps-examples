@@ -8,3 +8,4 @@ graphify-out/
 .DS_Store
 *.bak
 docker/
+**/.venv/
