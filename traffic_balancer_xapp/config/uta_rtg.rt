@@ -1,0 +1,9 @@
+newrt|start
+rte|12011|service-ricxapp-j-traffic-balancer-xapp-rmr.ricxapp-j:4560
+rte|12012|service-ricxapp-j-traffic-balancer-xapp-rmr.ricxapp-j:4560
+rte|12021|service-ricxapp-j-traffic-balancer-xapp-rmr.ricxapp-j:4560
+rte|12022|service-ricxapp-j-traffic-balancer-xapp-rmr.ricxapp-j:4560
+rte|12041|service-ricxapp-j-traffic-balancer-xapp-rmr.ricxapp-j:4560
+rte|12042|service-ricxapp-j-traffic-balancer-xapp-rmr.ricxapp-j:4560
+rte|12050|service-ricxapp-j-traffic-balancer-xapp-rmr.ricxapp-j:4560
+newrt|end

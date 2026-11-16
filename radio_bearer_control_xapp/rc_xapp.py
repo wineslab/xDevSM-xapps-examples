@@ -2,14 +2,13 @@ import time
 import argparse
 import signal
 
-import setup_imports
 
 
 # import xDevSM base xapp
-from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
+from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
 
 # import RC Radio Bearer Control Decorator
-from xDevSM.decorators.rc.rc_radio_bearer_control import RadioBearerControl
+from xdevsm.decorators.rc.rc_radio_bearer_control import RadioBearerControl
 
 logger = None
 

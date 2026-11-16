@@ -1,0 +1,10 @@
+# Keep the docker build context small. Commit provenance comes from
+# --build-arg XAPP_COMMIT (see docker/README.md), so .git is not needed.
+.git
+**/.git
+graphify-out/
+**/__pycache__/
+*.pyc
+.vscode/
+.DS_Store
+*.bak

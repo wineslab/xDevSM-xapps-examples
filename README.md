@@ -2,26 +2,45 @@
 
 This repository contains a set of example xApps built using the xDevSM framework.
 
+## Example xApps
+
+| Folder | Entry script | Service model(s) | Purpose |
+| --- | --- | --- | --- |
+| `kpm_basic_xapp/` | `kpm_xapp.py` | KPM | Subscribes to KPM measurements and stores them in InfluxDB, Redis, and/or CSV. |
+| `kpm_prb_xapp/` | `kpm_prb_xapp.py` | KPM + RC | Throughput-driven PRB quota adaptation: monitors KPM metrics and adjusts per-slice PRB ratios via RC control. |
+| `prb_control_xapp/` | `rc_xapp.py` | RC | Sends radio resource allocation control requests (per-slice PRB min/max/dedicated ratios). |
+| `radio_bearer_control_xapp/` | `rc_xapp.py` | RC | Minimal radio bearer control example (QoS flow mapping control request). |
+| `ho_xapp/` | `ho_xapp.py` | KPM + RC | Handover control via RC connected-mode mobility. |
+| `digital_twin_prb_xapp/` | `digital_twin_prb_xapp.py` | KPM + RC | Per-slice PRB allocation on a real gNB and its digital twin: every control is validated on the DT before being replayed on the real gNB. |
+| `traffic_balancer_xapp/` | `traffic_balancer.py` | KPM + RC | KPM monitor + PRB-quota controller: runs a swappable balancing policy across two slices and applies the chosen PRB minima via ACK-gated RC controls. |
+
+Each folder is self-contained and follows the same layout: `<entry>.py`, `requirements.txt`, and `config/` (xApp descriptor `config-file.json`, `schema.json`, RMR route table `uta_rtg.rt`).
+
 ## Use xDevSM
 
-Clone the repository and initialize the submodules:
+xDevSM is now the [`xdevsm`](https://pypi.org/project/xdevsm/) PyPI package (it used to be a git
+submodule of this repo). Clone the repository and install the chosen xApp's requirements —
+`xdevsm` is pulled in automatically:
+
 ```bash
 git clone https://github.com/wineslab/xDevSM-xapps-examples.git
-
-# clone xDevSM code
-git submodule init
-git submodule update
+cd xDevSM-xapps-examples/<xapp-folder>
+pip install -r requirements.txt   # installs xdevsm from PyPI
 ```
+
+No `git submodule init/update` step is needed anymore.
 
 ## Build & Deployment workflow
 **Note:** The following steps are general, so you can also apply them to build the image of your custom xApp.
 
-1. Clone the repository and initialize submodules.
+1. Clone the repository (no submodules to initialize).
 2. Pick the xApp folder you wish to build.
-3. Build the container image using the appropriate Dockerfile in docker.
+3. Build the container image with `docker/Dockerfile`, picking the xApp with build args (see [docker/README.md](docker/README.md) for the args, targets and xApps).
 
 ```bash
-docker build --tag <xapp-name>:<version> --file docker/Dockerfile.<xapp_folder> .
+docker build --file docker/Dockerfile --target prod \
+  --build-arg XAPP_DIR=<xapp_folder> --build-arg XAPP_ENTRY=<entry>.py \
+  --tag <xapp-name>:<version> .
 ```
 4. Tag and push the built image to your registry.
 
@@ -34,7 +53,9 @@ docker push <your_registry>/<xapp-name>:<version>
 
 ```bash
 # Example
-docker build --tag kpm-basic-xapp:0.2.0-dev --file docker/Dockerfile.kpm_basic_xapp.dev .
+docker build --file docker/Dockerfile --target dev \
+  --build-arg XAPP_DIR=kpm_basic_xapp --build-arg XAPP_ENTRY=kpm_xapp.py \
+  --tag kpm-basic-xapp:0.2.0-dev .
 docker tag kpm-basic-xapp:0.2.0-dev <your_username>/kpm-basic-xapp:0.2.0-dev
 docker push <your_username>/kpm-basic-xapp:0.2.0-dev 
 ```
@@ -54,13 +75,28 @@ docker push <your_username>/kpm-basic-xapp:0.2.0-dev
 ```
 6. Deploy the xApp via your orchestration or deployment environment using the updated configuration. A guide on how to use OSC-based tools is available [here](https://github.com/aferaudo/ORANInABox/wiki/Deploying-xApp).
 
+### Development workflow (`dev` target)
+
+The `dev` target builds an image whose entrypoint is `sleep infinity`: the container starts idle instead of launching the xApp. This lets you exec into the running container and start (or restart) the xApp manually while debugging:
+
+```bash
+kubectl exec -it <xapp-pod> -n <xapp-namespace> -- bash
+
+# then, inside the pod
+python <entry>.py -r ./config/uta_rtg.rt
+```
+
+The `prod` target runs the xApp directly (`python <entry>.py`).
+
+**Note:** the images install `xdevsm` from PyPI via each xApp's `requirements.txt`; there is no `xDevSM/` submodule to initialize before building.
+
 ## Custom xApp Development
 
 If you wish to develop your own xApp using this framework:
 
 - Use one of the example folders above as a reference starting point.
 
-- Keep the structure: `<name_of_your_xapp>/source_code`, `<name_of_your_xapp>/config_folder`, related Dockerfile in `docker/`.
+- Keep the structure: `<name_of_your_xapp>/source_code`, `<name_of_your_xapp>/config_folder`, `<name_of_your_xapp>/requirements.txt`, and build it with `docker/Dockerfile` (`--build-arg XAPP_DIR=<name_of_your_xapp>`).
 
 - Update the container image name, tag, and registration accordingly.
 

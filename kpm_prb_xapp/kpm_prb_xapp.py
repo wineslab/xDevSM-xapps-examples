@@ -1,24 +1,23 @@
 import argparse
 import signal
 import numpy as np
-import setup_imports
 import time
 import pandas as pd
 from mdclogpy import Level
 
 # import xDevSM base xapp
-from xDevSM.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
+from xdevsm.handlers.xDevSM_rmr_xapp import xDevSMRMRXapp
 
 # import xDevSM kpm decorator
-from xDevSM.decorators.kpm.kpm_frame import XappKpmFrame
+from xdevsm.decorators.kpm.kpm_frame import XappKpmFrame
 # import xDevSM rc decorator
-from xDevSM.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
+from xdevsm.decorators.rc.rc_radio_resource_alloc_control import RadioResourceAllocationControl
 
 # kpm related formats
-from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
-from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_action_def_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_ind_msg_e
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_type_enum
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_value_e
 
 
 string_to_level = {"DEBUG": Level.DEBUG,
@@ -82,9 +81,11 @@ class xAppMonControlContainer():
             self.xapp_gen.logger.info("[xAppMonControlContainer] Data saved to {}".format(self.csv_file))
         self.kpm_func.terminate(signum, frame)
 
-    def ind_msg_handler(self, ind_hdr, ind_msg, meid):
+    def ind_msg_handler(self, ind_hdr, ind_msg, meid, sub_id=None):
         """
-        Handle the indication message received from the xApp
+        Handle the indication message received from the xApp.
+        sub_id is passed by newer xDevSM versions to correlate the indication
+        with its subscription.
         """
         gnbid = meid.decode('utf-8')
         self.xapp_gen.logger.info("[xAppMonControlContainer] Received indication message from {}".format(gnbid))
