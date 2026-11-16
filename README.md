@@ -35,10 +35,12 @@ No `git submodule init/update` step is needed anymore.
 
 1. Clone the repository (no submodules to initialize).
 2. Pick the xApp folder you wish to build.
-3. Build the container image using the appropriate Dockerfile in docker.
+3. Build the container image with `docker/Dockerfile`, picking the xApp with build args (see [docker/README.md](docker/README.md) for the args, targets and xApps).
 
 ```bash
-docker build --tag <xapp-name>:<version> --file docker/Dockerfile.<xapp_folder> .
+docker build --file docker/Dockerfile --target prod \
+  --build-arg XAPP_DIR=<xapp_folder> --build-arg XAPP_ENTRY=<entry>.py \
+  --tag <xapp-name>:<version> .
 ```
 4. Tag and push the built image to your registry.
 
@@ -51,7 +53,9 @@ docker push <your_registry>/<xapp-name>:<version>
 
 ```bash
 # Example
-docker build --tag kpm-basic-xapp:0.2.0-dev --file docker/Dockerfile.kpm_basic_xapp.dev .
+docker build --file docker/Dockerfile --target dev \
+  --build-arg XAPP_DIR=kpm_basic_xapp --build-arg XAPP_ENTRY=kpm_xapp.py \
+  --tag kpm-basic-xapp:0.2.0-dev .
 docker tag kpm-basic-xapp:0.2.0-dev <your_username>/kpm-basic-xapp:0.2.0-dev
 docker push <your_username>/kpm-basic-xapp:0.2.0-dev 
 ```
@@ -71,9 +75,9 @@ docker push <your_username>/kpm-basic-xapp:0.2.0-dev
 ```
 6. Deploy the xApp via your orchestration or deployment environment using the updated configuration. A guide on how to use OSC-based tools is available [here](https://github.com/aferaudo/ORANInABox/wiki/Deploying-xApp).
 
-### Development workflow (`.dev` Dockerfiles)
+### Development workflow (`dev` target)
 
-The `.dev` Dockerfiles in `docker/` build images whose entrypoint is `sleep infinity`: the container starts idle instead of launching the xApp. This lets you exec into the running container and start (or restart) the xApp manually while debugging:
+The `dev` target builds an image whose entrypoint is `sleep infinity`: the container starts idle instead of launching the xApp. This lets you exec into the running container and start (or restart) the xApp manually while debugging:
 
 ```bash
 kubectl exec -it <xapp-pod> -n <xapp-namespace> -- bash
@@ -82,7 +86,7 @@ kubectl exec -it <xapp-pod> -n <xapp-namespace> -- bash
 python <entry>.py -r ./config/uta_rtg.rt
 ```
 
-The non-`.dev` images run the xApp directly via `CMD ["python", "<entry>.py"]`.
+The `prod` target runs the xApp directly (`python <entry>.py`).
 
 **Note:** the images install `xdevsm` from PyPI via each xApp's `requirements.txt`; there is no `xDevSM/` submodule to initialize before building.
 
@@ -92,7 +96,7 @@ If you wish to develop your own xApp using this framework:
 
 - Use one of the example folders above as a reference starting point.
 
-- Keep the structure: `<name_of_your_xapp>/source_code`, `<name_of_your_xapp>/config_folder`, related Dockerfile in `docker/`.
+- Keep the structure: `<name_of_your_xapp>/source_code`, `<name_of_your_xapp>/config_folder`, `<name_of_your_xapp>/requirements.txt`, and build it with `docker/Dockerfile` (`--build-arg XAPP_DIR=<name_of_your_xapp>`).
 
 - Update the container image name, tag, and registration accordingly.
 

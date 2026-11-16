@@ -63,33 +63,37 @@ Application-specific behaviour lives in container classes inside the main file (
 
 ## Build & run
 
-There is **no test suite, linter, or build script** — these are container-deployed xApps. The workflow is Docker-based, one Dockerfile per xApp in `docker/`:
+There is **no test suite, linter, or build script** — these are container-deployed xApps. The workflow is Docker-based, one `docker/Dockerfile` for every xApp, picked with build args (`docker/README.md` lists the args, targets and xApps):
 
 ```bash
 # Build (run from repo root — the build context copies the xApp folder; xdevsm is pip-installed)
-docker build --tag <xapp-name>:<version> --file docker/Dockerfile.<xapp_folder> .
+docker build --file docker/Dockerfile --target prod \
+  --build-arg XAPP_DIR=<xapp_folder> --build-arg XAPP_ENTRY=<main>.py \
+  --tag <xapp-name>:<version> .
 
 # Example
-docker build --tag kpm-basic-xapp:0.2.0-dev --file docker/Dockerfile.kpm_basic_xapp.dev .
+docker build --file docker/Dockerfile --target dev \
+  --build-arg XAPP_DIR=kpm_basic_xapp --build-arg XAPP_ENTRY=kpm_xapp.py \
+  --tag kpm-basic-xapp:0.2.0-dev .
 docker tag kpm-basic-xapp:0.2.0-dev <registry>/kpm-basic-xapp:0.2.0-dev
 docker push <registry>/kpm-basic-xapp:0.2.0-dev
 ```
 
 Then update `containers[].image` in that xApp's `config/config-file.json` to match the pushed image, and deploy via the RIC (OSC deployment guide: https://github.com/aferaudo/ORANInABox/wiki/Deploying-xApp).
 
-**`.dev` Dockerfiles use `ENTRYPOINT ["sleep", "infinity"]`** — the container starts idle so you can exec in and launch manually for debugging:
+**The `dev` target uses `ENTRYPOINT ["sleep", "infinity"]`** — the container starts idle so you can exec in and launch manually for debugging:
 
 ```bash
 python <main>.py [args]   # e.g. python kpm_xapp.py -r ./config/uta_rtg.rt
 ```
 
-The non-`.dev` path would use `CMD ["python", "<main>.py"]` (commented out in the dev images).
+The `prod` target runs the xApp (`python $XAPP_ENTRY`).
 
-### Things the Dockerfiles do that matter
+### Things the Dockerfile does that matter
 
 - Install OSC native libs from packagecloud: **RMR 4.9.4** and a **custom e2ap 2.0** (`riclibe2ap`, from `github.com/aferaudo/libe2ap_package`). These `.so`s are required at runtime.
-- Patch `ricxappframe/e2ap/asn1.py` to **re-enable `_asn1_free_indicationMsg`** (a `sed` uncomment) — fixes an indication-message memory free.
-- The SM `.so`s ship inside the pip-installed `xdevsm` package and load package-relative, so `LD_LIBRARY_PATH` no longer needs an xDevSM entry (only the RMR/e2ap system libs). Images use `python:3.11-slim-bullseye` (xdevsm requires Python ≥ 3.11; bullseye/glibc 2.31 loads the exec-stack encoders without an interpreter patch).
+- Apply the ricxappframe patches that ship with `xdevsm` (`python -m xdevsm.ricxappframe_patches`): they re-enable the indication-message free, add the RIC Control Acknowledge/Failure decoders, and size the control request buffer to the message.
+- The SM `.so`s ship inside the pip-installed `xdevsm` package and load package-relative, so `LD_LIBRARY_PATH` no longer needs an xDevSM entry (only the RMR/e2ap system libs). They need an executable stack (FlexRIC's `defer()` runs a trampoline on it), which glibc ≥ 2.41 refuses at `dlopen`, so the image (`python:3.11-slim`, Debian trixie) marks the Python interpreter instead (`docker/mark_execstack.py`). Never clear the flag on the libraries: they crash.
 - Key env vars: `CONFIG_FILE`, `RMR_SEED_RT` (static route table), `PLT_NAMESPACE` (RIC platform namespace).
 
 ## Knowledge graph (`graphify-out/`)

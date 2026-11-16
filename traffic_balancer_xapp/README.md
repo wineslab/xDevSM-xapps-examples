@@ -38,12 +38,14 @@ The controller also serialises the two RC sends so the **decreasing** slice alwa
 
 ## Build
 
-Run from the **repo root** (build context must include both this xApp folder and the `xDevSM/` submodule):
+Run from the **repo root** (the build context must include this xApp folder):
 
 ```bash
 docker build \
   --tag traffic-balancer-xapp:0.1.0-dev \
-  --file docker/Dockerfile.traffic_balancer.dev \
+  --file docker/Dockerfile --target dev \
+  --build-arg XAPP_DIR=traffic_balancer_xapp \
+  --build-arg XAPP_ENTRY=traffic_balancer.py \
   .
 
 docker tag traffic-balancer-xapp:0.1.0-dev angeloferaudo/traffic-balancer-xapp:0.1.0-dev
@@ -54,7 +56,7 @@ Then update `containers[].image.tag` in [`config/config-file.json`](config/confi
 
 ## Run (inside the pod)
 
-The dev Dockerfile uses `ENTRYPOINT ["sleep", "infinity"]`, so exec in and start manually:
+The `dev` image uses `ENTRYPOINT ["sleep", "infinity"]`, so exec in and start manually:
 
 ```bash
 oc exec -n ricxapp-j <traffic-balancer-pod> -- \
