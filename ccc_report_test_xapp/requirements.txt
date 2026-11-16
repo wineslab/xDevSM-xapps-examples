@@ -1,0 +1,4 @@
+# xdevsm 0.1.9 adds the E2SM-CCC REPORT API. It installs on Python 3.11 only.
+xdevsm>=0.1.9
+# ricxappframe.subsclient imports six without declaring it.
+six
