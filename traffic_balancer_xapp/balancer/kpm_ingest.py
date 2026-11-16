@@ -25,10 +25,10 @@ from typing import Dict, Optional
 
 import numpy as np
 
-from xDevSM.sm_framework.py_oran.kpm.enums import format_action_def_e
-from xDevSM.sm_framework.py_oran.kpm.enums import format_ind_msg_e
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_type_enum
-from xDevSM.sm_framework.py_oran.kpm.enums import meas_value_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_action_def_e
+from xdevsm.sm_framework.py_oran.kpm.enums import format_ind_msg_e
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_type_enum
+from xdevsm.sm_framework.py_oran.kpm.enums import meas_value_e
 
 from .state import SDS, SST, Sample, SampleBuffer
 
