@@ -32,6 +32,7 @@ the image flavor with `--target`. The build context is the repo root.
 | `ho_xapp` | `ho_xapp.py` |
 | `digital_twin_prb_xapp` | `digital_twin_prb_xapp.py` |
 | `traffic_balancer_xapp` | `traffic_balancer.py` |
+| `ccc_report_xapp` | `ccc_xapp.py` |
 
 ## Examples
 

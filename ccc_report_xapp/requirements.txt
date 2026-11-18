@@ -1,0 +1,3 @@
+ricxappframe==3.2.2
+mdclogpy==1.1.4
+xdevsm==0.1.8

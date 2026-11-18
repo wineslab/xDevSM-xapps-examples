@@ -13,6 +13,7 @@ This repository contains a set of example xApps built using the xDevSM framework
 | `ho_xapp/` | `ho_xapp.py` | KPM + RC | Handover control via RC connected-mode mobility. |
 | `digital_twin_prb_xapp/` | `digital_twin_prb_xapp.py` | KPM + RC | Per-slice PRB allocation on a real gNB and its digital twin: every control is validated on the DT before being replayed on the real gNB. |
 | `traffic_balancer_xapp/` | `traffic_balancer.py` | KPM + RC | KPM monitor + PRB-quota controller: runs a swappable balancing policy across two slices and applies the chosen PRB minima via ACK-gated RC controls. |
+| `ccc_report_xapp/` | `ccc_xapp.py` | CCC | Minimal E2SM-CCC example: subscribes the DU to a cell-level REPORT (Style 2) on O-NRCellDU and logs the indications. |
 
 Each folder is self-contained and follows the same layout: `<entry>.py`, `requirements.txt`, and `config/` (xApp descriptor `config-file.json`, `schema.json`, RMR route table `uta_rtg.rt`).
 
